@@ -1,0 +1,56 @@
+<div class="container mx-auto px-4 py-8">
+  <h2 class="text-3xl font-bold mb-6 text-gray-800">Upcoming & Live Matches</h2>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="loading$ | async" class="text-center py-4">
+    <p class="text-gray-600">Loading matches...</p>
+    <!-- Optional: Add a spinner -->
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error$ | async as error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+    <strong class="font-bold">Error!</strong>
+    <span class="block sm:inline"> {{ error }}</span>
+  </div>
+
+  <!-- Matches List -->
+  <div *ngIf="!(loading$ | async) && !(error$ | async) && (matches$ | async) as matches">
+    <div *ngIf="matches.length > 0; else noMatches" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div *ngFor="let match of matches" class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-semibold text-indigo-600">{{ match.sport }} - {{ match.league }}</span>
+            <span [ngClass]="{
+              'bg-green-100 text-green-800': match.status === 'Live',
+              'bg-blue-100 text-blue-800': match.status === 'Upcoming',
+              'bg-gray-100 text-gray-800': match.status === 'Finished'
+            }" class="text-xs font-medium px-2.5 py-0.5 rounded">
+              {{ match.status }}
+            </span>
+          </div>
+          <h3 class="text-xl font-semibold mb-2 text-gray-900">{{ match.name }}</h3>
+          <p class="text-gray-600 text-sm mb-1">{{ match.teams.join(" vs ") }}</p>
+          <p class="text-gray-600 text-sm mb-3">{{ match.location }}</p>
+          <p class="text-gray-500 text-sm mb-4">{{ match.startTime | date:"medium" }}</p>
+          
+          <!-- Add to Playlist Button -->
+          <button 
+            (click)="addToPlaylist(match.id)" 
+            class="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
+            Add to Playlist
+          </button>
+          <!-- Bonus: Watch Button -->
+          <button *ngIf="match.status === 'Live'" 
+            (click)="watchMatch(match.id)" 
+            class="w-full mt-2 px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 border border-transparent rounded-md shadow-sm hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Watch Now (Mock)
+          </button>
+        </div>
+      </div>
+    </div>
+    <ng-template #noMatches>
+      <p class="text-center text-gray-500 py-4">No matches available at the moment.</p>
+    </ng-template>
+  </div>
+</div>
+

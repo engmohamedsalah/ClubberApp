@@ -1,0 +1,32 @@
+﻿<Properties StartupConfiguration="{9B08CCF6-194B-47F8-B8CA-5EA046A93FD0}|https">
+  <MonoDevelop.Ide.ItemProperties.src.ClubberApp.Api PreferredExecutionTarget="/Applications/Google Chrome.app" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="ClubberApp.Api/ErrorHandlingMiddleware.cs">
+    <Files>
+      <File FileName="ClubberApp.Api/ClubberApp.Api.http" />
+      <File FileName="ClubberApp.Api/ErrorHandlingMiddleware.cs" Line="1" Column="1" />
+      <File FileName="ClubberApp.Api/Program.cs" Line="1" Column="1" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="ClubberApp" expanded="True" selected="True">
+            <Node name="src" expanded="True">
+              <Node name="ClubberApp.Api" expanded="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+      <Pad Id="MonoDevelop.UnitTesting.TestPad">
+        <State name="__root__">
+          <Node name="ClubberApp" expanded="True" selected="True" />
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MultiItemStartupConfigurations />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

@@ -1,0 +1,24 @@
+<nav class="bg-indigo-600 shadow-md">
+  <div class="container mx-auto px-4">
+    <div class="flex justify-between items-center py-4">
+      <a routerLink="/matches" class="text-xl font-bold text-white">My Sports Playlist</a>
+      <div class="flex space-x-4 items-center">
+        <!-- Show links based on authentication status -->
+        <ng-container *ngIf="(isAuthenticated$ | async); else loggedOutLinks">
+          <a routerLink="/matches" routerLinkActive="bg-indigo-700" [routerLinkActiveOptions]="{exact: true}" class="text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Matches</a>
+          <a routerLink="/playlist" routerLinkActive="bg-indigo-700" class="text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">My Playlist</a>
+          <button (click)="logout()" class="text-indigo-200 hover:text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Logout</button>
+        </ng-container>
+        <ng-template #loggedOutLinks>
+          <a routerLink="/auth/login" routerLinkActive="bg-indigo-700" class="text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Login</a>
+          <a routerLink="/auth/register" routerLinkActive="bg-indigo-700" class="text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Register</a>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main class="container mx-auto px-4 py-8">
+  <router-outlet></router-outlet>
+</main>
+
