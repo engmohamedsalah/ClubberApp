@@ -25,19 +25,7 @@ public class MatchService : IMatchService
     public async Task<IEnumerable<MatchDto>> GetAllMatchesAsync()
     {
         var matches = await _unitOfWork.MatchRepository.GetAllAsync();
-        var matchDtos = _mapper.Map<IEnumerable<MatchDto>>(matches);
-        
-        // Generate StreamURL for each match
-        foreach (var matchDto in matchDtos)
-        {
-            var match = matches.FirstOrDefault(m => m.Id == matchDto.Id);
-            if (match != null && string.IsNullOrEmpty(match.StreamURL))
-            {
-                matchDto.StreamURL = _streamUrlService.GenerateStreamUrl(match);
-            }
-        }
-        
-        return matchDtos;
+        return EnrichMatchDtos(matches, matches);
     }
 
     public async Task<MatchDto?> GetMatchByIdAsync(Guid id)
@@ -101,7 +89,7 @@ public class MatchService : IMatchService
         var match = await _unitOfWork.MatchRepository.GetByIdAsync(id);
         if (match == null) return false;
 
-        _unitOfWork.MatchRepository.Delete(match); // Changed from Remove to Delete
+        _unitOfWork.MatchRepository.Delete(match);
         await _unitOfWork.SaveChangesAsync();
         return true;
     }
@@ -112,19 +100,7 @@ public class MatchService : IMatchService
         // Convert DTO status to domain status for repository call
         var domainStatus = _mapper.Map<Domain.Entities.MatchStatus>(status);
         var matches = await _unitOfWork.MatchRepository.GetMatchesByStatusAsync(domainStatus);
-        var matchDtos = _mapper.Map<IEnumerable<MatchDto>>(matches);
-        
-        // Generate StreamURL for each match
-        foreach (var matchDto in matchDtos)
-        {
-            var match = matches.FirstOrDefault(m => m.Id == matchDto.Id);
-            if (match != null && string.IsNullOrEmpty(match.StreamURL))
-            {
-                matchDto.StreamURL = _streamUrlService.GenerateStreamUrl(match);
-            }
-        }
-        
-        return matchDtos;
+        return EnrichMatchDtos(matches, matches);
     }
 
     // Updated to use Enums.MatchStatus instead of DTOs.MatchStatus
@@ -132,29 +108,33 @@ public class MatchService : IMatchService
     {
         // Get all matches and filter in memory since FindAsync is not available
         var allMatches = await _unitOfWork.MatchRepository.GetAllAsync();
-        var query = allMatches.AsQueryable();
+        var filteredMatches = FilterMatches(allMatches, searchTerm, status);
+        return EnrichMatchDtos(filteredMatches, allMatches);
+    }
 
-        if (status.HasValue)
-        {
-            var domainStatus = _mapper.Map<Domain.Entities.MatchStatus>(status.Value);
-            query = query.Where(m => m.Status == domainStatus);
-        }
-
-        if (!string.IsNullOrWhiteSpace(searchTerm))
-        {
-            var term = searchTerm.Trim().ToLower();
-            // Use Title and Competition properties from Match entity
-            query = query.Where(m => m.Title.ToLower().Contains(term) ||
-                                      m.Competition.ToLower().Contains(term));
-        }
-
-        var matches = query.ToList();
-        var matchDtos = _mapper.Map<IEnumerable<MatchDto>>(matches);
+    // Updated to use Enums.MatchStatus instead of DTOs.MatchStatus
+    public async Task<PaginatedResult<MatchDto>> SearchMatchesPaginatedAsync(string? searchTerm, Enums.MatchStatus? status, int page, int pageSize)
+    {
+        var allMatches = await _unitOfWork.MatchRepository.GetAllAsync();
+        var filteredMatches = FilterMatches(allMatches, searchTerm, status);
         
-        // Generate StreamURL for each match
+        var totalCount = filteredMatches.Count();
+        var paged = filteredMatches.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var pagedDtos = EnrichMatchDtos(paged, allMatches);
+        
+        return new PaginatedResult<MatchDto>(pagedDtos, page, pageSize, totalCount);
+    }
+    
+    // Private helper methods to reduce code duplication
+    
+    private List<MatchDto> EnrichMatchDtos(IEnumerable<Match> matches, IEnumerable<Match> sourceMatches)
+    {
+        var matchDtos = _mapper.Map<List<MatchDto>>(matches);
+        
+        // Generate StreamURL for each match if needed
         foreach (var matchDto in matchDtos)
         {
-            var match = matches.FirstOrDefault(m => m.Id == matchDto.Id);
+            var match = sourceMatches.FirstOrDefault(m => m.Id == matchDto.Id);
             if (match != null && string.IsNullOrEmpty(match.StreamURL))
             {
                 matchDto.StreamURL = _streamUrlService.GenerateStreamUrl(match);
@@ -163,12 +143,10 @@ public class MatchService : IMatchService
         
         return matchDtos;
     }
-
-    // Updated to use Enums.MatchStatus instead of DTOs.MatchStatus
-    public async Task<PaginatedResult<MatchDto>> SearchMatchesPaginatedAsync(string? searchTerm, Enums.MatchStatus? status, int page, int pageSize)
+    
+    private IEnumerable<Match> FilterMatches(IEnumerable<Match> matches, string? searchTerm, Enums.MatchStatus? status)
     {
-        var allMatches = await _unitOfWork.MatchRepository.GetAllAsync();
-        var query = allMatches.AsQueryable();
+        var query = matches.AsQueryable();
 
         if (status.HasValue)
         {
@@ -183,21 +161,7 @@ public class MatchService : IMatchService
                                       m.Competition.ToLower().Contains(term));
         }
 
-        var totalCount = query.Count();
-        var paged = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        var pagedDtos = _mapper.Map<List<MatchDto>>(paged);
-        
-        // Generate StreamURL for each match
-        foreach (var matchDto in pagedDtos)
-        {
-            var match = paged.FirstOrDefault(m => m.Id == matchDto.Id);
-            if (match != null && string.IsNullOrEmpty(match.StreamURL))
-            {
-                matchDto.StreamURL = _streamUrlService.GenerateStreamUrl(match);
-            }
-        }
-        
-        return new PaginatedResult<MatchDto>(pagedDtos, page, pageSize, totalCount);
+        return query.ToList();
     }
 }
 
