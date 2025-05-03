@@ -4,7 +4,7 @@ import { provideHttpClient } from "@angular/common/http";
 import { provideMockStore, MockStore } from "@ngrx/store/testing";
 import { MatchesService } from "./matches.service";
 import { AppState } from "../store/reducers";
-import { Match } from "../models/match.model";
+import { Match, MatchStatus, MatchAvailability } from "../models/match.model";
 import { environment } from "../../environments/environment";
 import { Observable } from "rxjs"; // Import Observable
 
@@ -45,8 +45,8 @@ describe("MatchesService", () => {
   // Example using correct Match model properties and correct service method name:
   it("getMatches should return Match[] on success", (done) => {
     const mockMatches: Match[] = [
-      { id: "guid1", title: "Match 1", competition: "Comp A", date: new Date(), status: "Live" },
-      { id: "guid2", title: "Match 2", competition: "Comp B", date: new Date(), status: "Replay" }
+      { id: "guid1", title: "Match 1", competition: "Comp A", date: new Date(), status: MatchStatus.InProgress, availability: MatchAvailability.Available, streamURL: "" },
+      { id: "guid2", title: "Match 2", competition: "Comp B", date: new Date(), status: MatchStatus.Completed, availability: MatchAvailability.Available, streamURL: "" }
     ];
 
     // Call the correct method: getMatches()
