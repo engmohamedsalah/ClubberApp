@@ -14,7 +14,8 @@ public class MappingProfile : Profile
 
         // Match Mappings
         CreateMap<Match, MatchDto>()
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.Availability, opt => opt.MapFrom(src => src.Availability.ToString()));
         
         CreateMap<MatchCreateDto, Match>()
             .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Name))

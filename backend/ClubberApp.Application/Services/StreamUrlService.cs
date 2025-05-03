@@ -15,6 +15,10 @@ public class StreamUrlService : IStreamUrlService
 
     public string GenerateStreamUrl(Match match)
     {
+        // Don't generate URLs for matches that aren't available
+        if (match.Availability != MatchAvailability.Available)
+            return string.Empty;
+            
         return GenerateStreamUrl(match.Id, match.Status);
     }
 
