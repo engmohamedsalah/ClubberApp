@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of, timer } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { Match, MatchStatus, MatchAvailability } from '../models/match.model';
+import { Match, MatchStatus, MatchAvailability, prepareMatchData, isMatchLive, isMatchReplay } from '../models/match.model';
 
 @Injectable({
   providedIn: 'root'
@@ -90,6 +90,7 @@ export class MatchesService {
 
     // In production, use the API
     return this.http.get<Match[]>(this.apiUrl).pipe(
+      map(matches => matches.map(match => prepareMatchData(match))),
       catchError(error => {
         console.error('API error when fetching matches:', error);
         return of(this.getMockMatches()); // Fallback to mock data
@@ -102,13 +103,13 @@ export class MatchesService {
     if (!filter) return matches;
 
     return matches.filter(match =>
-      filter === 'Live' ? match.isLive : match.isReplay
+      filter === 'Live' ? isMatchLive(match) : isMatchReplay(match)
     );
   }
 
   // Mock data for development and testing
   private getMockMatches(): Match[] {
-    return [
+    const mockData: Match[] = [
       {
         id: '1',
         title: 'Dublin vs Kerry',
@@ -116,11 +117,8 @@ export class MatchesService {
         date: new Date(),
         status: MatchStatus.InProgress,
         availability: MatchAvailability.Available,
-        teams: ['Dublin', 'Kerry'],
-        location: 'Croke Park, Dublin',
-        isLive: true,
-        isReplay: false,
         streamURL: 'https://example.com/stream/1',
+        location: 'Croke Park, Dublin',
         thumbnail: 'https://placehold.co/600x400/indigo/white?text=Dublin+vs+Kerry'
       },
       {
@@ -130,11 +128,8 @@ export class MatchesService {
         date: new Date(Date.now() - 86400000), // Yesterday
         status: MatchStatus.Completed,
         availability: MatchAvailability.Available,
-        teams: ['Cork', 'Tipperary'],
-        location: 'Páirc Uí Chaoimh, Cork',
-        isLive: false,
-        isReplay: true,
         streamURL: 'https://example.com/stream/2',
+        location: 'Páirc Uí Chaoimh, Cork',
         thumbnail: 'https://placehold.co/600x400/indigo/white?text=Cork+vs+Tipperary'
       },
       {
@@ -144,11 +139,8 @@ export class MatchesService {
         date: new Date(Date.now() + 86400000), // Tomorrow
         status: MatchStatus.NotStarted,
         availability: MatchAvailability.Available,
-        teams: ['Mayo', 'Galway'],
-        location: 'MacHale Park, Castlebar',
-        isLive: false,
-        isReplay: false,
         streamURL: 'https://example.com/stream/3',
+        location: 'MacHale Park, Castlebar',
         thumbnail: 'https://placehold.co/600x400/indigo/white?text=Mayo+vs+Galway'
       },
       {
@@ -158,11 +150,8 @@ export class MatchesService {
         date: new Date(),
         status: MatchStatus.InProgress,
         availability: MatchAvailability.Available,
-        teams: ['Kilkenny', 'Wexford'],
-        location: 'Nowlan Park, Kilkenny',
-        isLive: true,
-        isReplay: false,
         streamURL: 'https://example.com/stream/4',
+        location: 'Nowlan Park, Kilkenny',
         thumbnail: 'https://placehold.co/600x400/indigo/white?text=Kilkenny+vs+Wexford'
       },
       {
@@ -172,11 +161,8 @@ export class MatchesService {
         date: new Date(Date.now() - 172800000), // 2 days ago
         status: MatchStatus.Completed,
         availability: MatchAvailability.Available,
-        teams: ['Limerick', 'Waterford'],
-        location: 'Gaelic Grounds, Limerick',
-        isLive: false,
-        isReplay: true,
         streamURL: 'https://example.com/stream/5',
+        location: 'Gaelic Grounds, Limerick',
         thumbnail: 'https://placehold.co/600x400/indigo/white?text=Limerick+vs+Waterford'
       },
       {
@@ -186,14 +172,14 @@ export class MatchesService {
         date: new Date(Date.now() + 172800000), // In 2 days
         status: MatchStatus.NotStarted,
         availability: MatchAvailability.Available,
-        teams: ['Donegal', 'Tyrone'],
-        location: 'MacCumhaill Park, Ballybofey',
-        isLive: false,
-        isReplay: false,
         streamURL: 'https://example.com/stream/6',
+        location: 'MacCumhaill Park, Ballybofey',
         thumbnail: 'https://placehold.co/600x400/indigo/white?text=Donegal+vs+Tyrone'
       }
     ];
+
+    // Process mock data to ensure all computed properties are set
+    return mockData.map(match => prepareMatchData(match));
   }
 }
 
