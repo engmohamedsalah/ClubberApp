@@ -3,6 +3,20 @@
 # Print colorful header
 echo -e "\033[1;36m========== STARTING CLUBBER APP DEVELOPMENT SERVERS ==========\033[0m"
 
+# Function to check if a port is in use
+check_port() {
+  lsof -i:$1 > /dev/null 2>&1
+  return $?
+}
+
+# Check common backend and frontend ports
+if check_port 5000 || check_port 5001 || check_port 5008 || check_port 4200; then
+  echo -e "\033[1;33mDetected services already running on required ports. Stopping them first...\033[0m"
+  ./stop-dev.sh
+  # Wait a moment for ports to be released
+  sleep 2
+fi
+
 # Start .NET backend server
 echo -e "\033[1;33mStarting .NET backend server...\033[0m"
 cd backend
