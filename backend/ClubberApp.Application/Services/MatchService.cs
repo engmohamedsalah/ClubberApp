@@ -1,5 +1,6 @@
 using AutoMapper;
 using ClubberApp.Application.DTOs;
+using ClubberApp.Application.Enums;
 using ClubberApp.Application.Interfaces;
 using ClubberApp.Application.Interfaces.Services;
 using ClubberApp.Domain.Entities;
@@ -55,8 +56,8 @@ public class MatchService : IMatchService
         return matchDto;
     }
 
-    // Note: Assumes MatchCreateDto has Title, Competition, Date, Status properties
-    public async Task<MatchDto> CreateMatchAsync(MatchCreateDto matchDto)
+    // Updated to use the unified MatchDto
+    public async Task<MatchDto> CreateMatchAsync(MatchDto matchDto)
     {
         var match = _mapper.Map<Match>(matchDto);
         
@@ -68,15 +69,20 @@ public class MatchService : IMatchService
         
         await _unitOfWork.MatchRepository.AddAsync(match);
         await _unitOfWork.SaveChangesAsync();
-        return _mapper.Map<MatchDto>(match);
+        
+        // Set the generated ID
+        matchDto.Id = match.Id;
+        return matchDto;
     }
 
-    // Note: Assumes MatchUpdateDto has Title, Competition, Date, Status properties
-    public async Task<bool> UpdateMatchAsync(Guid id, MatchUpdateDto matchDto)
+    // Updated to use the unified MatchDto
+    public async Task<bool> UpdateMatchAsync(Guid id, MatchDto matchDto)
     {
         var match = await _unitOfWork.MatchRepository.GetByIdAsync(id);
         if (match == null) return false;
 
+        // Ensure the ID is set correctly
+        matchDto.Id = id;
         _mapper.Map(matchDto, match);
         
         // Generate StreamURL if not provided
@@ -100,9 +106,12 @@ public class MatchService : IMatchService
         return true;
     }
 
-    public async Task<IEnumerable<MatchDto>> GetMatchesByStatusAsync(MatchStatus status)
+    // Updated to use Enums.MatchStatus instead of DTOs.MatchStatus
+    public async Task<IEnumerable<MatchDto>> GetMatchesByStatusAsync(Enums.MatchStatus status)
     {
-        var matches = await _unitOfWork.MatchRepository.GetMatchesByStatusAsync(status);
+        // Convert DTO status to domain status for repository call
+        var domainStatus = _mapper.Map<Domain.Entities.MatchStatus>(status);
+        var matches = await _unitOfWork.MatchRepository.GetMatchesByStatusAsync(domainStatus);
         var matchDtos = _mapper.Map<IEnumerable<MatchDto>>(matches);
         
         // Generate StreamURL for each match
@@ -118,7 +127,8 @@ public class MatchService : IMatchService
         return matchDtos;
     }
 
-    public async Task<IEnumerable<MatchDto>> SearchMatchesAsync(string? searchTerm, MatchStatus? status)
+    // Updated to use Enums.MatchStatus instead of DTOs.MatchStatus
+    public async Task<IEnumerable<MatchDto>> SearchMatchesAsync(string? searchTerm, Enums.MatchStatus? status)
     {
         // Get all matches and filter in memory since FindAsync is not available
         var allMatches = await _unitOfWork.MatchRepository.GetAllAsync();
@@ -126,7 +136,8 @@ public class MatchService : IMatchService
 
         if (status.HasValue)
         {
-            query = query.Where(m => m.Status == status.Value);
+            var domainStatus = _mapper.Map<Domain.Entities.MatchStatus>(status.Value);
+            query = query.Where(m => m.Status == domainStatus);
         }
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -153,14 +164,16 @@ public class MatchService : IMatchService
         return matchDtos;
     }
 
-    public async Task<PaginatedResult<MatchDto>> SearchMatchesPaginatedAsync(string? searchTerm, MatchStatus? status, int page, int pageSize)
+    // Updated to use Enums.MatchStatus instead of DTOs.MatchStatus
+    public async Task<PaginatedResult<MatchDto>> SearchMatchesPaginatedAsync(string? searchTerm, Enums.MatchStatus? status, int page, int pageSize)
     {
         var allMatches = await _unitOfWork.MatchRepository.GetAllAsync();
         var query = allMatches.AsQueryable();
 
         if (status.HasValue)
         {
-            query = query.Where(m => m.Status == status.Value);
+            var domainStatus = _mapper.Map<Domain.Entities.MatchStatus>(status.Value);
+            query = query.Where(m => m.Status == domainStatus);
         }
 
         if (!string.IsNullOrWhiteSpace(searchTerm))

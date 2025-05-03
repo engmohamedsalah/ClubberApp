@@ -1,6 +1,6 @@
 using ClubberApp.Application.DTOs;
+using ClubberApp.Application.Enums;
 using ClubberApp.Application.Interfaces.Services;
-using ClubberApp.Domain.Entities; // For MatchStatus enum
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -65,7 +65,7 @@ public class MatchesController : ControllerBase
     [HttpGet("live")]
     public async Task<IActionResult> GetLiveMatches()
     {
-        var paginated = await _matchService.SearchMatchesPaginatedAsync(null, MatchStatus.Live, 1, 100);
+        var paginated = await _matchService.SearchMatchesPaginatedAsync(null, MatchStatus.InProgress, 1, 100);
         return Ok(paginated.Data); // Return just the list for compatibility with tests
     }
 

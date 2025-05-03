@@ -1,5 +1,6 @@
 using AutoMapper;
 using ClubberApp.Application.DTOs;
+using ClubberApp.Application.Enums;
 using ClubberApp.Application.Interfaces;
 using ClubberApp.Application.Interfaces.Repositories;
 using ClubberApp.Application.Services;
@@ -39,10 +40,28 @@ public class PlaylistServiceTests
 
         // Setup AutoMapper mock
         _mockMapper.Setup(m => m.Map<IEnumerable<MatchDto>>(It.IsAny<IEnumerable<DomainMatch>>())) // Use alias
-                   .Returns((IEnumerable<DomainMatch> source) => source.Select(m => new MatchDto { Id = m.Id, Title = m.Title, Competition = m.Competition, Date = m.Date, Status = m.Status.ToString() }).ToList());
+                   .Returns((IEnumerable<DomainMatch> source) => source.Select(m => new MatchDto { 
+                       Id = m.Id, 
+                       Title = m.Title, 
+                       Competition = m.Competition, 
+                       Date = m.Date, 
+                       Status = m.Status == Domain.Entities.MatchStatus.Live ? 
+                           Application.Enums.MatchStatus.InProgress : 
+                           Application.Enums.MatchStatus.Completed,
+                       Availability = Application.Enums.MatchAvailability.Available
+                   }).ToList());
+                   
         _mockMapper.Setup(m => m.Map<List<MatchDto>>(It.IsAny<IEnumerable<DomainMatch>>())) // Use alias
-                   .Returns((IEnumerable<DomainMatch> source) => source.Select(m => new MatchDto { Id = m.Id, Title = m.Title, Competition = m.Competition, Date = m.Date, Status = m.Status.ToString() }).ToList());
-
+                   .Returns((IEnumerable<DomainMatch> source) => source.Select(m => new MatchDto { 
+                       Id = m.Id, 
+                       Title = m.Title, 
+                       Competition = m.Competition, 
+                       Date = m.Date, 
+                       Status = m.Status == Domain.Entities.MatchStatus.Live ? 
+                           Application.Enums.MatchStatus.InProgress : 
+                           Application.Enums.MatchStatus.Completed,
+                       Availability = Application.Enums.MatchAvailability.Available
+                   }).ToList());
     }
 
     [Fact]
@@ -52,11 +71,10 @@ public class PlaylistServiceTests
         var userId = Guid.NewGuid();
         var matches = new List<DomainMatch> // Use alias
         {
-            new DomainMatch { Id = Guid.NewGuid(), Title = "Match 1", Competition = "Comp A", Date = DateTime.UtcNow, Status = MatchStatus.Live },
-            new DomainMatch { Id = Guid.NewGuid(), Title = "Match 2", Competition = "Comp B", Date = DateTime.UtcNow.AddDays(1), Status = MatchStatus.Replay } // Changed status for variety
+            new DomainMatch { Id = Guid.NewGuid(), Title = "Match 1", Competition = "Comp A", Date = DateTime.UtcNow, Status = Domain.Entities.MatchStatus.Live },
+            new DomainMatch { Id = Guid.NewGuid(), Title = "Match 2", Competition = "Comp B", Date = DateTime.UtcNow.AddDays(1), Status = Domain.Entities.MatchStatus.Replay }
         };
-        var expectedMatchDtos = matches.Select(m => new MatchDto { Id = m.Id, Title = m.Title, Competition = m.Competition, Date = m.Date, Status = m.Status.ToString() }).ToList();
-
+        
         _mockPlaylistRepository.Setup(repo => repo.GetMatchesByUserIdAsync(userId)).ReturnsAsync(matches);
 
         // Act
@@ -64,9 +82,9 @@ public class PlaylistServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(expectedMatchDtos.Count, result.Matches.Count);
-        Assert.Equal(expectedMatchDtos[0].Id, result.Matches[0].Id);
-        Assert.Equal(expectedMatchDtos[1].Id, result.Matches[1].Id);
+        Assert.Equal(matches.Count, result.Matches.Count);
+        Assert.Equal(matches[0].Id, result.Matches[0].Id);
+        Assert.Equal(matches[1].Id, result.Matches[1].Id);
         _mockPlaylistRepository.Verify(repo => repo.GetMatchesByUserIdAsync(userId), Times.Once);
     }
 
