@@ -12,29 +12,60 @@ public class MatchService : IMatchService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly IStreamUrlService _streamUrlService;
 
-    public MatchService(IUnitOfWork unitOfWork, IMapper mapper)
+    public MatchService(IUnitOfWork unitOfWork, IMapper mapper, IStreamUrlService streamUrlService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _streamUrlService = streamUrlService;
     }
 
     public async Task<IEnumerable<MatchDto>> GetAllMatchesAsync()
     {
         var matches = await _unitOfWork.MatchRepository.GetAllAsync();
-        return _mapper.Map<IEnumerable<MatchDto>>(matches);
+        var matchDtos = _mapper.Map<IEnumerable<MatchDto>>(matches);
+        
+        // Generate StreamURL for each match
+        foreach (var matchDto in matchDtos)
+        {
+            var match = matches.FirstOrDefault(m => m.Id == matchDto.Id);
+            if (match != null && string.IsNullOrEmpty(match.StreamURL))
+            {
+                matchDto.StreamURL = _streamUrlService.GenerateStreamUrl(match);
+            }
+        }
+        
+        return matchDtos;
     }
 
     public async Task<MatchDto?> GetMatchByIdAsync(Guid id)
     {
         var match = await _unitOfWork.MatchRepository.GetByIdAsync(id);
-        return _mapper.Map<MatchDto>(match);
+        if (match == null) return null;
+        
+        var matchDto = _mapper.Map<MatchDto>(match);
+        
+        // Generate StreamURL if not already present
+        if (string.IsNullOrEmpty(match.StreamURL))
+        {
+            matchDto.StreamURL = _streamUrlService.GenerateStreamUrl(match);
+        }
+        
+        return matchDto;
     }
 
     // Note: Assumes MatchCreateDto has Title, Competition, Date, Status properties
     public async Task<MatchDto> CreateMatchAsync(MatchCreateDto matchDto)
     {
         var match = _mapper.Map<Match>(matchDto);
+        
+        // Generate StreamURL if not provided
+        if (string.IsNullOrEmpty(match.StreamURL))
+        {
+            match.StreamURL = _streamUrlService.GenerateStreamUrl(match);
+        }
+        
         await _unitOfWork.MatchRepository.AddAsync(match);
         await _unitOfWork.SaveChangesAsync();
         return _mapper.Map<MatchDto>(match);
@@ -47,6 +78,13 @@ public class MatchService : IMatchService
         if (match == null) return false;
 
         _mapper.Map(matchDto, match);
+        
+        // Generate StreamURL if not provided
+        if (string.IsNullOrEmpty(match.StreamURL))
+        {
+            match.StreamURL = _streamUrlService.GenerateStreamUrl(match);
+        }
+        
         _unitOfWork.MatchRepository.Update(match);
         await _unitOfWork.SaveChangesAsync();
         return true;
@@ -64,10 +102,20 @@ public class MatchService : IMatchService
 
     public async Task<IEnumerable<MatchDto>> GetMatchesByStatusAsync(MatchStatus status)
     {
-        // Use the specific repository method if available, otherwise filter
-        // Assuming IMatchRepository has GetMatchesByStatusAsync
         var matches = await _unitOfWork.MatchRepository.GetMatchesByStatusAsync(status);
-        return _mapper.Map<IEnumerable<MatchDto>>(matches);
+        var matchDtos = _mapper.Map<IEnumerable<MatchDto>>(matches);
+        
+        // Generate StreamURL for each match
+        foreach (var matchDto in matchDtos)
+        {
+            var match = matches.FirstOrDefault(m => m.Id == matchDto.Id);
+            if (match != null && string.IsNullOrEmpty(match.StreamURL))
+            {
+                matchDto.StreamURL = _streamUrlService.GenerateStreamUrl(match);
+            }
+        }
+        
+        return matchDtos;
     }
 
     public async Task<IEnumerable<MatchDto>> SearchMatchesAsync(string? searchTerm, MatchStatus? status)
@@ -89,7 +137,20 @@ public class MatchService : IMatchService
                                       m.Competition.ToLower().Contains(term));
         }
 
-        return _mapper.Map<IEnumerable<MatchDto>>(query.ToList());
+        var matches = query.ToList();
+        var matchDtos = _mapper.Map<IEnumerable<MatchDto>>(matches);
+        
+        // Generate StreamURL for each match
+        foreach (var matchDto in matchDtos)
+        {
+            var match = matches.FirstOrDefault(m => m.Id == matchDto.Id);
+            if (match != null && string.IsNullOrEmpty(match.StreamURL))
+            {
+                matchDto.StreamURL = _streamUrlService.GenerateStreamUrl(match);
+            }
+        }
+        
+        return matchDtos;
     }
 
     public async Task<PaginatedResult<MatchDto>> SearchMatchesPaginatedAsync(string? searchTerm, MatchStatus? status, int page, int pageSize)
@@ -112,6 +173,17 @@ public class MatchService : IMatchService
         var totalCount = query.Count();
         var paged = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
         var pagedDtos = _mapper.Map<List<MatchDto>>(paged);
+        
+        // Generate StreamURL for each match
+        foreach (var matchDto in pagedDtos)
+        {
+            var match = paged.FirstOrDefault(m => m.Id == matchDto.Id);
+            if (match != null && string.IsNullOrEmpty(match.StreamURL))
+            {
+                matchDto.StreamURL = _streamUrlService.GenerateStreamUrl(match);
+            }
+        }
+        
         return new PaginatedResult<MatchDto>(pagedDtos, page, pageSize, totalCount);
     }
 }

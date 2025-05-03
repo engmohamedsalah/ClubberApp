@@ -9,4 +9,5 @@ public class MatchDto
     public string Competition { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public string Status { get; set; } = string.Empty; // String representation for API
+    public string StreamURL { get; set; } = string.Empty;
 } 

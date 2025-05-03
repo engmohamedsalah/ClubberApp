@@ -15,7 +15,14 @@ public class MappingProfile : Profile
         // Match Mappings
         CreateMap<Match, MatchDto>()
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
-        // No reverse map needed for MatchDto -> Match in this scope
+        
+        CreateMap<MatchCreateDto, Match>()
+            .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Name))
+            .ForMember(dest => dest.Competition, opt => opt.MapFrom(src => src.Sport));
+            
+        CreateMap<MatchUpdateDto, Match>()
+            .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Name))
+            .ForMember(dest => dest.Competition, opt => opt.MapFrom(src => src.Sport));
 
         // Playlist Mappings (No direct mapping needed for Playlist join entity to PlaylistDto)
         // The PlaylistService now constructs PlaylistDto from a list of MatchDto.

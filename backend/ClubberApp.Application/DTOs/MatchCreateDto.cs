@@ -9,4 +9,5 @@ public class MatchCreateDto
     public string Sport { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public string Status { get; set; } = "NotStarted"; // Default to NotStarted, use string for API flexibility
+    public string StreamURL { get; set; } = string.Empty;
 } 

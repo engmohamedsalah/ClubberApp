@@ -13,6 +13,7 @@ public class Match
     public string Competition { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public MatchStatus Status { get; set; }
+    public string StreamURL { get; set; } = string.Empty;
 
     public virtual ICollection<Playlist> PlaylistEntries { get; set; } = new List<Playlist>();
 }

@@ -9,4 +9,5 @@ public class MatchUpdateDto
     public string Sport { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public string Status { get; set; } = string.Empty; // Use string for API flexibility
+    public string StreamURL { get; set; } = string.Empty;
 } 

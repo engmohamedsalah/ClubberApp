@@ -34,6 +34,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMatchService, MatchService>();
 builder.Services.AddScoped<IPlaylistService, PlaylistService>();
+builder.Services.AddScoped<IStreamUrlService, StreamUrlService>();
 builder.Services.AddScoped<ClubberApp.Infrastructure.IHealthCheckService, ClubberApp.Infrastructure.HealthCheckService>();
 
 // 4. AutoMapper
