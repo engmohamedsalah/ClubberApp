@@ -46,20 +46,20 @@
         <div *ngFor="let match of matches" class="bg-gray-800 rounded-lg shadow-lg overflow-hidden transition-transform hover:scale-[1.02]">
           <!-- Match Image/Thumbnail -->
           <div class="relative h-48 bg-gray-700">
-            <img *ngIf="match.thumbnail" [src]="match.thumbnail" alt="{{ match.title }}" class="w-full h-full object-cover">
-            <div *ngIf="!match.thumbnail" class="w-full h-full flex items-center justify-center">
+            <img *ngIf="getThumbnail(match)" [src]="getThumbnail(match)" alt="{{ match.title }}" class="w-full h-full object-cover">
+            <div *ngIf="!getThumbnail(match)" class="w-full h-full flex items-center justify-center">
               <span class="text-gray-500">No image available</span>
             </div>
 
             <!-- Match Status Badge -->
             <div
               [ngClass]="{
-                'bg-green-600': match.isLive,
-                'bg-blue-600': !match.isLive && !match.isReplay,
-                'bg-purple-600': match.isReplay
+                'bg-green-600': isLive(match),
+                'bg-blue-600': !isLive(match) && !isReplay(match),
+                'bg-purple-600': isReplay(match)
               }"
               class="absolute top-3 right-3 text-xs font-bold px-2 py-1 rounded-full text-white">
-              {{ match.isLive ? 'LIVE' : (match.isReplay ? 'REPLAY' : 'UPCOMING') }}
+              {{ isLive(match) ? 'LIVE' : (isReplay(match) ? 'REPLAY' : 'UPCOMING') }}
             </div>
           </div>
 
@@ -71,7 +71,7 @@
 
             <div class="mb-4">
               <p class="text-lime-400 text-sm font-semibold">{{ match.competition }}</p>
-              <p class="text-gray-400 text-sm mt-1" *ngIf="match.location">{{ match.location }}</p>
+              <p class="text-gray-400 text-sm mt-1" *ngIf="getLocation(match)">{{ getLocation(match) }}</p>
               <p class="text-gray-400 text-sm mt-1">{{ match.date | date:'medium' }}</p>
             </div>
 
@@ -85,10 +85,10 @@
 
               <!-- Watch Button (only for live or replay) -->
               <button
-                *ngIf="match.isLive || match.isReplay"
+                *ngIf="isLive(match) || isReplay(match)"
                 (click)="watchMatch(match)"
                 class="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800">
-                {{ match.isLive ? 'Watch Live' : 'Watch Replay' }}
+                {{ isLive(match) ? 'Watch Live' : 'Watch Replay' }}
               </button>
             </div>
           </div>
