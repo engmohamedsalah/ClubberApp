@@ -4,6 +4,8 @@
 
 export const environment = {
   production: false,
-  apiUrl: "http://localhost:5000" // Default development API URL (adjust port if needed)
+  apiUrl: "http://localhost:5000", // Default development API URL
+  autoRefreshInterval: 60000, // Auto-refresh interval in milliseconds (60 seconds)
+  mockStreamingEnabled: true // Enable mock streaming
 };
 

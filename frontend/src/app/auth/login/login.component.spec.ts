@@ -49,7 +49,7 @@ describe("LoginComponent", () => {
 
   it("username field validity", () => {
     let errors: ValidationErrors | null = {}; // Use ValidationErrors type
-    let username = component.loginForm.controls["username"];
+    const username = component.loginForm.controls["username"];
     expect(username.valid).toBeFalsy();
 
     // Username field is required
@@ -64,7 +64,7 @@ describe("LoginComponent", () => {
 
   it("password field validity", () => {
     let errors: ValidationErrors | null = {}; // Use ValidationErrors type
-    let password = component.loginForm.controls["password"];
+    const password = component.loginForm.controls["password"];
     expect(password.valid).toBeFalsy();
 
     // Password field is required

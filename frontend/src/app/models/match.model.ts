@@ -7,6 +7,11 @@ export interface Match {
   status: MatchStatus; // Using enum instead of string
   availability: MatchAvailability; // Added to match backend DTO
   streamURL?: string; // Optional stream URL
+  teams: string[]; // Array of team names
+  location?: string; // Optional match location
+  isLive: boolean; // Indicates if match is currently live
+  isReplay: boolean; // Indicates if match is available for replay
+  thumbnail?: string; // Optional thumbnail image URL
 }
 
 // Match the backend enums

@@ -1,29 +1,28 @@
-import { Component } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { RouterOutlet, RouterLink, RouterLinkActive } from "@angular/router";
-import { Store } from "@ngrx/store";
-import { Observable } from "rxjs";
-import { AppState } from "./store/reducers"; // Adjust path as needed
-import { selectIsAuthenticated } from "./store/selectors/auth.selectors"; // Adjust path as needed
-import * as AuthActions from "./store/actions/auth.actions"; // Adjust path as needed
+import { Component, HostBinding } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
-  selector: "app-root",
+  selector: 'app-root',
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
-  templateUrl: "./app.component.html",
-  styleUrls: ["./app.component.css"],
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = "frontend";
-  isAuthenticated$: Observable<boolean>;
+  title = 'Clubber Sports';
 
-  constructor(private store: Store<AppState>) {
-    this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
+  // Add dark mode to the body
+  @HostBinding('class') get class() {
+    return 'bg-gray-900 text-white';
   }
 
-  logout(): void {
-    this.store.dispatch(AuthActions.logout());
+  // Toggle mobile menu (this would be connected to a button in the template)
+  toggleMobileMenu(): void {
+    const mobileMenu = document.querySelector('.md\\:hidden:not(button)') as HTMLElement;
+    if (mobileMenu) {
+      mobileMenu.classList.toggle('hidden');
+    }
   }
 }
 

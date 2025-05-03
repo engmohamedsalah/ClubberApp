@@ -1,24 +1,67 @@
-<nav class="bg-indigo-600 shadow-md">
-  <div class="container mx-auto px-4">
-    <div class="flex justify-between items-center py-4">
-      <a routerLink="/matches" class="text-xl font-bold text-white">My Sports Playlist</a>
-      <div class="flex space-x-4 items-center">
-        <!-- Show links based on authentication status -->
-        <ng-container *ngIf="(isAuthenticated$ | async); else loggedOutLinks">
-          <a routerLink="/matches" routerLinkActive="bg-indigo-700" [routerLinkActiveOptions]="{exact: true}" class="text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Matches</a>
-          <a routerLink="/playlist" routerLinkActive="bg-indigo-700" class="text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">My Playlist</a>
-          <button (click)="logout()" class="text-indigo-200 hover:text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Logout</button>
-        </ng-container>
-        <ng-template #loggedOutLinks>
-          <a routerLink="/auth/login" routerLinkActive="bg-indigo-700" class="text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Login</a>
-          <a routerLink="/auth/register" routerLinkActive="bg-indigo-700" class="text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Register</a>
-        </ng-template>
+<div class="min-h-screen bg-gray-900">
+  <!-- Navigation Bar -->
+  <nav class="bg-gray-900 border-b border-gray-800 shadow-lg sticky top-0 z-30">
+    <div class="container mx-auto px-4">
+      <div class="flex justify-between items-center py-4">
+        <!-- Logo -->
+        <a routerLink="/" class="flex items-center space-x-2">
+          <span class="text-lime-500 text-2xl font-bold">Clubber</span>
+          <span class="bg-lime-500 text-xs font-bold text-gray-900 px-2 py-1 rounded-full">SPORTS</span>
+        </a>
+
+        <!-- Main Navigation Links -->
+        <div class="hidden md:flex space-x-4 items-center">
+          <a routerLink="/matches" routerLinkActive="border-lime-500 text-white" [routerLinkActiveOptions]="{exact: false}"
+             class="text-gray-300 hover:text-white border-b-2 border-transparent py-2 px-1 font-medium transition-colors">
+            Matches
+          </a>
+          <a routerLink="/playlist" routerLinkActive="border-lime-500 text-white" [routerLinkActiveOptions]="{exact: false}"
+             class="text-gray-300 hover:text-white border-b-2 border-transparent py-2 px-1 font-medium transition-colors">
+            My Playlist
+          </a>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <button (click)="toggleMobileMenu()" class="md:hidden text-gray-300 hover:text-white focus:outline-none">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
       </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<main class="container mx-auto px-4 py-8">
-  <router-outlet></router-outlet>
-</main>
+  <!-- Mobile Menu (Hidden by default) -->
+  <div class="hidden md:hidden bg-gray-800 shadow-lg">
+    <div class="container mx-auto px-4 py-2">
+      <a routerLink="/matches" routerLinkActive="text-lime-500" class="block py-3 text-gray-300 hover:text-white font-medium">
+        Matches
+      </a>
+      <a routerLink="/playlist" routerLinkActive="text-lime-500" class="block py-3 text-gray-300 hover:text-white font-medium">
+        My Playlist
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <main>
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-950 text-gray-400">
+    <div class="container mx-auto px-4 py-8">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="mb-4 md:mb-0">
+          <p class="text-sm">&copy; 2023 Clubber Sports. All rights reserved.</p>
+        </div>
+        <div class="flex space-x-4">
+          <a href="#" class="text-gray-400 hover:text-lime-500 transition-colors">Terms</a>
+          <a href="#" class="text-gray-400 hover:text-lime-500 transition-colors">Privacy</a>
+          <a href="#" class="text-gray-400 hover:text-lime-500 transition-colors">Help</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
 

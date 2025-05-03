@@ -1,5 +1,7 @@
 export const environment = {
   production: true,
-  apiUrl: "/api" // Placeholder for production API URL (e.g., relative path if served together, or absolute URL)
+  apiUrl: '/api', // Production API URL (relative, will be resolved by the server)
+  autoRefreshInterval: 60000, // Auto-refresh interval in milliseconds (60 seconds)
+  mockStreamingEnabled: true // Enable mock streaming
 };
 
