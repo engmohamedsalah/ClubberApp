@@ -1,29 +1,30 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Match } from '../models/match.model';
 import { Playlist, PlaylistActionResult } from '../models/playlist.model';
-import { MatchesService } from '../matches/matches.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PlaylistService {
   private apiUrl = `${environment.apiUrl}/api/Playlist`;
+
+  // State management
   private playlistSubject = new BehaviorSubject<Match[]>([]);
   private loadingSubject = new BehaviorSubject<boolean>(false);
   private errorSubject = new BehaviorSubject<string | null>(null);
   private notificationSubject = new BehaviorSubject<{message: string, type: 'success' | 'error'} | null>(null);
 
-  // Observable streams
+  // Public observables
   public playlist$ = this.playlistSubject.asObservable();
   public loading$ = this.loadingSubject.asObservable();
   public error$ = this.errorSubject.asObservable();
   public notification$ = this.notificationSubject.asObservable();
 
-  constructor(private http: HttpClient, private matchesService: MatchesService) {
+  constructor(private http: HttpClient) {
     // Load playlist from local storage on init
     this.loadFromLocalStorage();
   }
@@ -45,12 +46,7 @@ export class PlaylistService {
         this.playlistSubject.next(playlist.matches);
         this.loadingSubject.next(false);
       }),
-      catchError(error => {
-        console.error('Error loading playlist:', error);
-        this.errorSubject.next('Failed to load playlist. Please try again.');
-        this.loadingSubject.next(false);
-        return of({ matches: [] });
-      })
+      catchError(error => this.handleError('Failed to load playlist', error))
     ).subscribe();
   }
 
@@ -59,10 +55,7 @@ export class PlaylistService {
     // Check if match is already in playlist
     const currentPlaylist = this.playlistSubject.getValue();
     if (currentPlaylist.some(m => m.id === match.id)) {
-      this.notificationSubject.next({
-        message: 'This match is already in your playlist.',
-        type: 'error'
-      });
+      this.showNotification('This match is already in your playlist.', 'error');
       return;
     }
 
@@ -71,10 +64,7 @@ export class PlaylistService {
       const updatedPlaylist = [...currentPlaylist, match];
       this.playlistSubject.next(updatedPlaylist);
       this.saveToLocalStorage(updatedPlaylist);
-      this.notificationSubject.next({
-        message: `${match.title} added to your playlist!`,
-        type: 'success'
-      });
+      this.showNotification(`${match.title} added to your playlist!`, 'success');
       return;
     }
 
@@ -84,29 +74,14 @@ export class PlaylistService {
       tap(result => {
         if (result.succeeded) {
           this.playlistSubject.next(result.playlist?.matches || []);
-          this.notificationSubject.next({
-            message: `${match.title} added to your playlist!`,
-            type: 'success'
-          });
+          this.showNotification(`${match.title} added to your playlist!`, 'success');
         } else {
           this.errorSubject.next(result.message);
-          this.notificationSubject.next({
-            message: result.message,
-            type: 'error'
-          });
+          this.showNotification(result.message, 'error');
         }
         this.loadingSubject.next(false);
       }),
-      catchError(error => {
-        console.error('Error adding to playlist:', error);
-        this.errorSubject.next('Failed to add match to playlist. Please try again.');
-        this.loadingSubject.next(false);
-        this.notificationSubject.next({
-          message: 'Failed to add match to playlist.',
-          type: 'error'
-        });
-        return of({ succeeded: false, message: 'Error', playlist: null });
-      })
+      catchError(error => this.handleError('Failed to add match to playlist', error))
     ).subscribe();
   }
 
@@ -124,10 +99,7 @@ export class PlaylistService {
       const updatedPlaylist = currentPlaylist.filter(m => m.id !== matchId);
       this.playlistSubject.next(updatedPlaylist);
       this.saveToLocalStorage(updatedPlaylist);
-      this.notificationSubject.next({
-        message: `${matchToRemove.title} removed from your playlist!`,
-        type: 'success'
-      });
+      this.showNotification(`${matchToRemove.title} removed from your playlist!`, 'success');
       return;
     }
 
@@ -137,29 +109,14 @@ export class PlaylistService {
       tap(result => {
         if (result.succeeded) {
           this.playlistSubject.next(result.playlist?.matches || []);
-          this.notificationSubject.next({
-            message: `Match removed from your playlist!`,
-            type: 'success'
-          });
+          this.showNotification(`Match removed from your playlist!`, 'success');
         } else {
           this.errorSubject.next(result.message);
-          this.notificationSubject.next({
-            message: result.message,
-            type: 'error'
-          });
+          this.showNotification(result.message, 'error');
         }
         this.loadingSubject.next(false);
       }),
-      catchError(error => {
-        console.error('Error removing from playlist:', error);
-        this.errorSubject.next('Failed to remove match from playlist. Please try again.');
-        this.loadingSubject.next(false);
-        this.notificationSubject.next({
-          message: 'Failed to remove match from playlist.',
-          type: 'error'
-        });
-        return of({ succeeded: false, message: 'Error', playlist: null });
-      })
+      catchError(error => this.handleError('Failed to remove match from playlist', error))
     ).subscribe();
   }
 
@@ -171,6 +128,20 @@ export class PlaylistService {
   // Clear notification after it's been shown
   clearNotification(): void {
     this.notificationSubject.next(null);
+  }
+
+  // Show notification helper method
+  private showNotification(message: string, type: 'success' | 'error'): void {
+    this.notificationSubject.next({ message, type });
+  }
+
+  // Error handling helper method
+  private handleError(errorMessage: string, error: HttpErrorResponse | Error): Observable<PlaylistActionResult> {
+    console.error(`${errorMessage}:`, error);
+    this.errorSubject.next(`${errorMessage}. Please try again.`);
+    this.loadingSubject.next(false);
+    this.showNotification(errorMessage, 'error');
+    return of({ succeeded: false, message: 'Error', playlist: null });
   }
 
   // Helper methods for local storage
