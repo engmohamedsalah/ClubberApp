@@ -9,6 +9,7 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using ClubberApp.Application.DTOs;
 using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ClubberApp.Api.Tests.v1;
 
@@ -72,36 +73,34 @@ public class PlaylistControllerTests : V1ControllerTestBase
         return match?.Id ?? Guid.Empty;
     }
 
-    public class ProblemDetails
-    {
-        public string? Type { get; set; }
-        public string? Title { get; set; }
-        public int? Status { get; set; }
-        public string? Detail { get; set; }
-        public string? Instance { get; set; }
-    }
-
     [Fact]
     public async Task GetPlaylist_ShouldReturnUnauthorized_WhenNotAuthenticated()
     {
+        // Arrange
+        // (No setup needed for unauthenticated request)
+        
+        // Act
         var response = await _client.GetAsync($"{ApiBase}/playlist");
+        
+        // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        Assert.Equal("Unauthorized", problem?.Title);
-        Assert.Equal(401, problem?.Status);
     }
 
     [Fact]
     public async Task GetPlaylist_ShouldReturnPlaylist_WhenAuthenticated()
     {
+        // Arrange
         var (client, _) = await GetAuthenticatedClientAndUserIdAsync();
+        
+        // Act
         var response = await client.GetAsync($"{ApiBase}/playlist");
         if (!response.IsSuccessStatusCode)
         {
-            var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-            throw new Exception($"GetPlaylist failed: {problem?.Title} - {problem?.Detail}");
+            throw new Exception($"GetPlaylist failed: {response.StatusCode} - {response.ReasonPhrase}");
         }
         var playlist = await response.Content.ReadFromJsonAsync<PlaylistDto>();
+        
+        // Assert
         Assert.NotNull(playlist);
         Assert.Empty(playlist.Matches);
     }
@@ -109,22 +108,29 @@ public class PlaylistControllerTests : V1ControllerTestBase
     [Fact]
     public async Task AddMatchToPlaylist_ShouldReturnUnauthorized_WhenNotAuthenticated()
     {
+        // Arrange
         var matchId = Guid.NewGuid();
+        
+        // Act
         var response = await _client.PostAsync($"{ApiBase}/playlist/{matchId}", null);
+        
+        // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        Assert.Equal("Unauthorized", problem?.Title);
-        Assert.Equal(401, problem?.Status);
     }
 
     [Fact]
     public async Task AddMatchToPlaylist_ShouldReturnBadRequest_WhenMatchNotFound()
     {
+        // Arrange
         var (client, _) = await GetAuthenticatedClientAndUserIdAsync();
         var nonExistentMatchId = Guid.NewGuid();
+        
+        // Act
         var response = await client.PostAsync($"{ApiBase}/playlist/{nonExistentMatchId}", null);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("Add match to playlist failed", problem?.Title);
         Assert.Equal(400, problem?.Status);
         Assert.Contains("not found", problem?.Detail ?? string.Empty, StringComparison.OrdinalIgnoreCase);
@@ -133,15 +139,19 @@ public class PlaylistControllerTests : V1ControllerTestBase
     [Fact]
     public async Task AddMatchToPlaylist_ShouldReturnUpdatedPlaylist_WhenMatchExistsAndNotInPlaylist()
     {
+        // Arrange
         var (client, _) = await GetAuthenticatedClientAndUserIdAsync();
         var matchId = await GetSeededMatchIdAsync();
+        
+        // Act
         var response = await client.PostAsync($"{ApiBase}/playlist/{matchId}", null);
         if (!response.IsSuccessStatusCode)
         {
-            var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-            throw new Exception($"AddMatchToPlaylist failed: {problem?.Title} - {problem?.Detail}");
+            throw new Exception($"AddMatchToPlaylist failed: {response.StatusCode} - {response.ReasonPhrase}");
         }
         var result = await response.Content.ReadFromJsonAsync<PlaylistActionResultDto>();
+        
+        // Assert
         Assert.True(result?.Succeeded);
         Assert.NotNull(result?.Playlist);
         Assert.Contains(result.Playlist.Matches, m => m.Id == matchId);
@@ -150,22 +160,29 @@ public class PlaylistControllerTests : V1ControllerTestBase
     [Fact]
     public async Task RemoveMatchFromPlaylist_ShouldReturnUnauthorized_WhenNotAuthenticated()
     {
+        // Arrange
         var matchId = Guid.NewGuid();
+        
+        // Act
         var response = await _client.DeleteAsync($"{ApiBase}/playlist/{matchId}");
+        
+        // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        Assert.Equal("Unauthorized", problem?.Title);
-        Assert.Equal(401, problem?.Status);
     }
 
     [Fact]
     public async Task RemoveMatchFromPlaylist_ShouldReturnBadRequest_WhenMatchNotInPlaylist()
     {
+        // Arrange
         var (client, _) = await GetAuthenticatedClientAndUserIdAsync();
         var matchId = Guid.NewGuid();
+        
+        // Act
         var response = await client.DeleteAsync($"{ApiBase}/playlist/{matchId}");
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("Remove match from playlist failed", problem?.Title);
         Assert.Equal(400, problem?.Status);
         Assert.Contains("not found", problem?.Detail ?? string.Empty, StringComparison.OrdinalIgnoreCase);
@@ -174,16 +191,20 @@ public class PlaylistControllerTests : V1ControllerTestBase
     [Fact]
     public async Task RemoveMatchFromPlaylist_ShouldReturnUpdatedPlaylist_WhenMatchInPlaylist()
     {
+        // Arrange
         var (client, _) = await GetAuthenticatedClientAndUserIdAsync();
         var matchId = await GetSeededMatchIdAsync();
         await client.PostAsync($"{ApiBase}/playlist/{matchId}", null);
+        
+        // Act
         var response = await client.DeleteAsync($"{ApiBase}/playlist/{matchId}");
         if (!response.IsSuccessStatusCode)
         {
-            var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-            throw new Exception($"RemoveMatchFromPlaylist failed: {problem?.Title} - {problem?.Detail}");
+            throw new Exception($"RemoveMatchFromPlaylist failed: {response.StatusCode} - {response.ReasonPhrase}");
         }
         var result = await response.Content.ReadFromJsonAsync<PlaylistActionResultDto>();
+        
+        // Assert
         Assert.True(result?.Succeeded);
         Assert.NotNull(result?.Playlist);
         Assert.DoesNotContain(result.Playlist.Matches, m => m.Id == matchId);

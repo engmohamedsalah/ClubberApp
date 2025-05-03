@@ -8,25 +8,9 @@ using System.Threading.Tasks;
 using Xunit;
 using ClubberApp.Application.DTOs;
 using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ClubberApp.Api.Tests.v1;
-
-public class ProblemDetails
-{
-    public string? Type { get; set; }
-    public string? Title { get; set; }
-    public int? Status { get; set; }
-    public string? Detail { get; set; }
-    public string? Instance { get; set; }
-}
-
-public class PaginatedResult<T>
-{
-    public IEnumerable<T> Data { get; set; } = new List<T>();
-    public int Page { get; set; }
-    public int PageSize { get; set; }
-    public int TotalCount { get; set; }
-}
 
 public class MatchesControllerTests : V1ControllerTestBase
 {
@@ -59,9 +43,15 @@ public class MatchesControllerTests : V1ControllerTestBase
     [Fact]
     public async Task GetAllMatches_ShouldReturnUnauthorized_WhenNotAuthenticated()
     {
+        // Arrange
+        // (No setup needed for unauthenticated request)
+        
+        // Act
         var response = await _client.GetAsync($"{ApiBase}/matches");
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.Equal("Unauthorized", problem?.Title);
         Assert.Equal(401, problem?.Status);
     }
@@ -69,7 +59,10 @@ public class MatchesControllerTests : V1ControllerTestBase
     [Fact]
     public async Task GetAllMatches_ShouldReturnMatches_WhenAuthenticated()
     {
+        // Arrange
         var client = await GetAuthenticatedClientAsync();
+        
+        // Act
         var response = await client.GetAsync($"{ApiBase}/matches");
         if (!response.IsSuccessStatusCode)
         {
@@ -77,6 +70,8 @@ public class MatchesControllerTests : V1ControllerTestBase
             throw new Exception($"GetAllMatches failed: {problem?.Title} - {problem?.Detail}");
         }
         var paginated = await response.Content.ReadFromJsonAsync<PaginatedResult<MatchDto>>();
+        
+        // Assert
         Assert.NotNull(paginated);
         Assert.NotNull(paginated.Data);
         Assert.NotEmpty(paginated.Data);
@@ -85,9 +80,15 @@ public class MatchesControllerTests : V1ControllerTestBase
     [Fact]
     public async Task GetLiveMatches_ShouldReturnUnauthorized_WhenNotAuthenticated()
     {
+        // Arrange
+        // (No setup needed for unauthenticated request)
+        
+        // Act
         var response = await _client.GetAsync($"{ApiBase}/matches/live");
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.Equal("Unauthorized", problem?.Title);
         Assert.Equal(401, problem?.Status);
     }
@@ -95,7 +96,10 @@ public class MatchesControllerTests : V1ControllerTestBase
     [Fact]
     public async Task GetLiveMatches_ShouldReturnLiveMatches_WhenAuthenticated()
     {
+        // Arrange
         var client = await GetAuthenticatedClientAsync();
+        
+        // Act
         var response = await client.GetAsync($"{ApiBase}/matches/live");
         if (!response.IsSuccessStatusCode)
         {
@@ -103,6 +107,8 @@ public class MatchesControllerTests : V1ControllerTestBase
             throw new Exception($"GetLiveMatches failed: {problem?.Title} - {problem?.Detail}");
         }
         var matches = await response.Content.ReadFromJsonAsync<IEnumerable<MatchDto>>();
+        
+        // Assert
         Assert.NotNull(matches);
         Assert.NotEmpty(matches);
     }
