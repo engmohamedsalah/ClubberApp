@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable, Subscription } from 'rxjs';
-import { Match } from '../../models/match.model';
+import { Match, MatchUIHelper } from '../../models/match.model';
 import { PlaylistService } from '../playlist.service';
 import { NotificationComponent } from '../../shared';
 
@@ -41,6 +41,32 @@ export class PlaylistViewComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Helper methods to make UI properties available to the template
+  isLive(match: Match): boolean {
+    return MatchUIHelper.isLive(match);
+  }
+
+  isReplay(match: Match): boolean {
+    return MatchUIHelper.isReplay(match);
+  }
+
+  getTeams(match: Match): string[] {
+    return MatchUIHelper.getTeams(match);
+  }
+
+  getLocation(match: Match): string | undefined {
+    // In a real app, this might come from a separate venue/location DB
+    // For demo purposes, extract it from the competition field if present
+    if (match.competition.includes('at ')) {
+      return match.competition.split('at ')[1].trim();
+    }
+    return undefined;
+  }
+
+  getThumbnail(match: Match): string | undefined {
+    return MatchUIHelper.getThumbnail(match);
+  }
+
   searchPlaylist(): void {
     // Debounce search to avoid too many filtering operations
     if (this.searchTimeout) {
@@ -73,11 +99,14 @@ export class PlaylistViewComponent implements OnInit, OnDestroy {
     modalDiv.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
     modalDiv.id = 'stream-modal';
 
+    const location = this.getLocation(match);
+    const teams = this.getTeams(match);
+
     // Modal content
     modalDiv.innerHTML = `
       <div class="bg-gray-900 rounded-lg overflow-hidden max-w-4xl w-full mx-4">
         <div class="p-4 flex justify-between items-center border-b border-gray-700">
-          <h3 class="text-xl font-bold text-white">${match.title} - ${match.isLive ? 'Live Stream' : 'Replay'}</h3>
+          <h3 class="text-xl font-bold text-white">${match.title} - ${this.isLive(match) ? 'Live Stream' : 'Replay'}</h3>
           <button id="close-modal" class="text-white hover:text-gray-300">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -86,7 +115,7 @@ export class PlaylistViewComponent implements OnInit, OnDestroy {
           </button>
         </div>
         <div class="relative" style="padding-top: 56.25%">
-          <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"
+          <iframe src="${match.streamURL || 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1'}"
             class="absolute inset-0 w-full h-full"
             frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -95,7 +124,8 @@ export class PlaylistViewComponent implements OnInit, OnDestroy {
         </div>
         <div class="p-4 text-gray-300">
           <p>Competition: ${match.competition}</p>
-          <p>Location: ${match.location || 'Unknown'}</p>
+          <p>Teams: ${teams.join(' vs ')}</p>
+          ${location ? `<p>Location: ${location}</p>` : ''}
         </div>
       </div>
     `;

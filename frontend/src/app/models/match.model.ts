@@ -5,20 +5,11 @@ export interface Match {
   competition: string;
   date: Date; // Or string, depending on how you handle dates
   status: MatchStatus; // Using enum instead of string
-  availability: MatchAvailability; // Added to match backend DTO
-  streamURL?: string; // Optional stream URL
-
-  // Frontend-specific properties (derived from backend data)
-  location?: string; // Optional match location
-  thumbnail?: string; // Optional thumbnail image URL
-  teams?: string[]; // Array of team names - derived from title
-
-  // These properties are computed in the component from status
-  isLive?: boolean; // Computed from status === MatchStatus.InProgress
-  isReplay?: boolean; // Computed from status === MatchStatus.Completed
+  availability: MatchAvailability; // From backend DTO
+  streamURL: string;
 }
 
-// Match the backend enums exactly
+// Match the backend enums
 export enum MatchStatus {
   NotStarted = 'NotStarted',
   InProgress = 'InProgress',
@@ -31,23 +22,30 @@ export enum MatchAvailability {
   Unavailable = 'Unavailable'
 }
 
-// Utility functions to derive frontend-specific properties
-export function isMatchLive(match: Match): boolean {
-  return match.status === MatchStatus.InProgress;
-}
+// UI Helper functions to derive display properties from the backend model
+export class MatchUIHelper {
+  // Check if a match is live based on its status
+  static isLive(match: Match): boolean {
+    return match.status === MatchStatus.InProgress;
+  }
 
-export function isMatchReplay(match: Match): boolean {
-  return match.status === MatchStatus.Completed;
-}
+  // Check if a match is available for replay
+  static isReplay(match: Match): boolean {
+    return match.status === MatchStatus.Completed;
+  }
 
-// Helper to prepare match data from backend DTO
-export function prepareMatchData(match: Match): Match {
-  return {
-    ...match,
-    isLive: isMatchLive(match),
-    isReplay: isMatchReplay(match),
-    // Extract teams from title if not provided (e.g., "Team A vs Team B")
-    teams: match.teams || (match.title?.includes(' vs ') ? match.title.split(' vs ') : undefined)
-  };
+  // Get match location from title (assuming format "Team1 vs Team2" with venue info in components)
+  static getTeams(match: Match): string[] {
+    // Extract team names from title, assuming format "Team1 vs Team2"
+    const teamParts = match.title.split(' vs ');
+    return teamParts.length === 2 ? teamParts : [match.title];
+  }
+
+  // Generate thumbnail URL based on match data if needed
+  static getThumbnail(match: Match): string | undefined {
+    // In a real app, this might use team data or competition to generate a relevant image URL
+    // For now, return undefined since thumbnails would typically come from a media service
+    return undefined;
+  }
 }
 

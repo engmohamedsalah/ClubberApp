@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError, tap, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { Match } from '../models/match.model';
+import { Match, MatchStatus, MatchAvailability } from '../models/match.model';
 import { Playlist, PlaylistActionResult } from '../models/playlist.model';
 
 @Injectable({
@@ -42,6 +42,13 @@ export class PlaylistService {
 
     // In production, use API
     this.http.get<Playlist>(this.apiUrl).pipe(
+      map(playlist => {
+        // Ensure all matches adhere to backend model structure
+        return {
+          ...playlist,
+          matches: playlist.matches.map(this.ensureMatchFormat)
+        };
+      }),
       tap(playlist => {
         this.playlistSubject.next(playlist.matches);
         this.loadingSubject.next(false);
@@ -52,29 +59,44 @@ export class PlaylistService {
 
   // Add match to playlist
   addToPlaylist(match: Match): void {
+    // Ensure match conforms to backend model
+    const formattedMatch = this.ensureMatchFormat(match);
+
     // Check if match is already in playlist
     const currentPlaylist = this.playlistSubject.getValue();
-    if (currentPlaylist.some(m => m.id === match.id)) {
+    if (currentPlaylist.some(m => m.id === formattedMatch.id)) {
       this.showNotification('This match is already in your playlist.', 'error');
       return;
     }
 
     // In development, use local storage
     if (!environment.production) {
-      const updatedPlaylist = [...currentPlaylist, match];
+      const updatedPlaylist = [...currentPlaylist, formattedMatch];
       this.playlistSubject.next(updatedPlaylist);
       this.saveToLocalStorage(updatedPlaylist);
-      this.showNotification(`${match.title} added to your playlist!`, 'success');
+      this.showNotification(`${formattedMatch.title} added to your playlist!`, 'success');
       return;
     }
 
     // In production, use API
     this.loadingSubject.next(true);
-    this.http.post<PlaylistActionResult>(`${this.apiUrl}/${match.id}`, {}).pipe(
+    this.http.post<PlaylistActionResult>(`${this.apiUrl}/${formattedMatch.id}`, {}).pipe(
+      map(result => {
+        if (result.playlist) {
+          return {
+            ...result,
+            playlist: {
+              ...result.playlist,
+              matches: result.playlist.matches.map(this.ensureMatchFormat)
+            }
+          };
+        }
+        return result;
+      }),
       tap(result => {
         if (result.succeeded) {
           this.playlistSubject.next(result.playlist?.matches || []);
-          this.showNotification(`${match.title} added to your playlist!`, 'success');
+          this.showNotification(`${formattedMatch.title} added to your playlist!`, 'success');
         } else {
           this.errorSubject.next(result.message);
           this.showNotification(result.message, 'error');
@@ -106,6 +128,18 @@ export class PlaylistService {
     // In production, use API
     this.loadingSubject.next(true);
     this.http.delete<PlaylistActionResult>(`${this.apiUrl}/${matchId}`).pipe(
+      map(result => {
+        if (result.playlist) {
+          return {
+            ...result,
+            playlist: {
+              ...result.playlist,
+              matches: result.playlist.matches.map(this.ensureMatchFormat)
+            }
+          };
+        }
+        return result;
+      }),
       tap(result => {
         if (result.succeeded) {
           this.playlistSubject.next(result.playlist?.matches || []);
@@ -130,6 +164,20 @@ export class PlaylistService {
     this.notificationSubject.next(null);
   }
 
+  // Ensure match object adheres to backend model structure
+  private ensureMatchFormat(match: Partial<Match>): Match {
+    // Extract only the properties present in the backend model
+    return {
+      id: match.id || '',
+      title: match.title || '',
+      competition: match.competition || '',
+      date: match.date || new Date(),
+      status: match.status || MatchStatus.NotStarted,
+      availability: match.availability || MatchAvailability.Available,
+      streamURL: match.streamURL || ''
+    };
+  }
+
   // Show notification helper method
   private showNotification(message: string, type: 'success' | 'error'): void {
     this.notificationSubject.next({ message, type });
@@ -149,7 +197,9 @@ export class PlaylistService {
     try {
       const savedPlaylist = localStorage.getItem('clubber_playlist');
       if (savedPlaylist) {
-        this.playlistSubject.next(JSON.parse(savedPlaylist));
+        const matches = JSON.parse(savedPlaylist);
+        // Ensure all matches loaded from storage follow backend model
+        this.playlistSubject.next(matches.map(this.ensureMatchFormat));
       }
     } catch (error) {
       console.error('Error loading playlist from local storage:', error);
