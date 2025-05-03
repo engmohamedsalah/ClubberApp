@@ -16,4 +16,16 @@ public class MatchDto
     public MatchAvailability Availability { get; set; } = MatchAvailability.Available;
     
     public string StreamURL { get; set; } = string.Empty;
+    
+    // Added fields to align with frontend
+    public string[] Teams { get; set; } = Array.Empty<string>();
+    public string Location { get; set; } = string.Empty;
+    public string Thumbnail { get; set; } = string.Empty;
+    
+    // Computed properties for the frontend
+    [JsonIgnore]
+    public bool IsLive => Status == MatchStatus.InProgress;
+    
+    [JsonIgnore]
+    public bool IsReplay => Status == MatchStatus.Completed;
 } 

@@ -9,8 +9,8 @@ export interface Match {
   streamURL?: string; // Optional stream URL
   teams: string[]; // Array of team names
   location?: string; // Optional match location
-  isLive: boolean; // Indicates if match is currently live
-  isReplay: boolean; // Indicates if match is available for replay
+  isLive: boolean; // Computed from status on the backend (InProgress)
+  isReplay: boolean; // Computed from status on the backend (Completed)
   thumbnail?: string; // Optional thumbnail image URL
 }
 

@@ -14,7 +14,9 @@ public class MappingProfile : Profile
         CreateMap<RegisterDto, User>(); // Note: Password hashing handled separately
 
         // Match Mappings - Updated for unified DTO with enum support
-        CreateMap<Match, MatchDto>();
+        CreateMap<Match, MatchDto>()
+            .ForMember(dest => dest.IsLive, opt => opt.Ignore())
+            .ForMember(dest => dest.IsReplay, opt => opt.Ignore());
         
         // Domain to DTO mapping (with status mapping)
         CreateMap<Domain.Entities.MatchStatus, Enums.MatchStatus>()

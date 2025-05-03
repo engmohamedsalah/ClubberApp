@@ -23,6 +23,11 @@ public class Match
     public MatchStatus Status { get; set; }
     public MatchAvailability Availability { get; set; } = MatchAvailability.Available;
     public string StreamURL { get; set; } = string.Empty;
+    
+    // Added fields to align with frontend
+    public string[] Teams { get; set; } = Array.Empty<string>();
+    public string Location { get; set; } = string.Empty;
+    public string Thumbnail { get; set; } = string.Empty;
 
     public virtual ICollection<Playlist> PlaylistEntries { get; set; } = new List<Playlist>();
 }
