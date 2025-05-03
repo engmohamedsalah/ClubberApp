@@ -3,7 +3,6 @@ import { provideMockStore, MockStore } from "@ngrx/store/testing";
 import { PlaylistViewComponent } from "./playlist-view.component";
 import { AppState } from "../../store/reducers";
 import { Playlist } from "../../models/playlist.model";
-import { Match } from "../../models/match.model";
 import * as PlaylistActions from "../../store/actions/playlist.actions";
 // Correct import for selector
 import { selectUserPlaylist, selectPlaylistLoading } from "../../store/selectors/playlist.selectors";

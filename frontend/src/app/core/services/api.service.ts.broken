@@ -1,0 +1,174 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError, timer } from 'rxjs';
+import { catchError, timeout, retry } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
+import { LoggingService } from './logging.service';
+
+/**
+ * Error class for API-related errors with user-friendly messages
+ */
+export class ApiError extends Error {
+  constructor(
+    public originalError: HttpErrorResponse,
+    public userMessage = 'An error occurred while communicating with the server.'
+  ) {
+    super(userMessage);
+    this.name = 'ApiError';
+  }
+}
+
+/**
+ * Core API service that abstracts HTTP requests to the backend
+ * Provides common error handling, retries, and request/response mapping
+ */
+@Injectable({
+  providedIn: 'root'
+})
+export class ApiService {
+  private readonly apiUrl: string;
+  private readonly timeoutMs: number;
+  private readonly maxRetries: number;
+
+  constructor(
+    private http: HttpClient,
+    private loggingService: LoggingService
+  ) {
+    this.apiUrl = environment.apiUrl;
+    this.timeoutMs = environment.apiTimeoutMs;
+    this.maxRetries = environment.maxRetries;
+  }
+
+  /**
+   * Make a GET request to the API
+   * @param endpoint - API endpoint to call (without base URL)
+   * @param params - Optional query parameters
+   * @returns - Observable of the response
+   */
+  get<T>(endpoint: string, params?: HttpParams | Record<string, string | string[]>): Observable<T> {
+    return this.http.get<T>(`${this.apiUrl}/${endpoint}`, { params })
+      .pipe(
+        timeout(this.timeoutMs),
+        this.addRetryWithBackoff(),
+        catchError(error => this.handleError(error))
+      );
+  }
+
+  /**
+   * Make a POST request to the API
+   * @param endpoint - API endpoint to call (without base URL)
+   * @param body - Request body
+   * @param options - Optional HTTP options
+   * @returns - Observable of the response
+   */
+  post<T>(endpoint: string, body: unknown, options?: Record<string, unknown>): Observable<T> {
+    return this.http.post<T>(`${this.apiUrl}/${endpoint}`, body, options)
+      .pipe(
+        timeout(this.timeoutMs),
+        this.addRetryWithBackoff(),
+        catchError(error => this.handleError(error))
+      );
+  }
+
+  /**
+   * Make a PUT request to the API
+   * @param endpoint - API endpoint to call (without base URL)
+   * @param body - Request body
+   * @param options - Optional HTTP options
+   * @returns - Observable of the response
+   */
+  put<T>(endpoint: string, body: unknown, options?: Record<string, unknown>): Observable<T> {
+    return this.http.put<T>(`${this.apiUrl}/${endpoint}`, body, options)
+      .pipe(
+        timeout(this.timeoutMs),
+        this.addRetryWithBackoff(),
+        catchError(error => this.handleError(error))
+      );
+  }
+
+  /**
+   * Make a DELETE request to the API
+   * @param endpoint - API endpoint to call (without base URL)
+   * @param options - Optional HTTP options
+   * @returns - Observable of the response
+   */
+  delete<T>(endpoint: string, options?: Record<string, unknown>): Observable<T> {
+    return this.http.delete<T>(`${this.apiUrl}/${endpoint}`, options)
+      .pipe(
+        timeout(this.timeoutMs),
+        this.addRetryWithBackoff(),
+        catchError(error => this.handleError(error))
+      );
+  }
+
+  /**
+   * Add exponential backoff retry strategy to an observable
+   * Only retries for specific status codes and network errors
+   */
+  private addRetryWithBackoff() {
+    return retry({
+      count: this.maxRetries,
+      delay: (error, retryCount) => {
+        // Only retry for network errors and 5xx (server) errors
+        const isServerError = error instanceof HttpErrorResponse &&
+                               (error.status === 0 || (error.status >= 500 && error.status < 600));
+
+        if (!isServerError) {
+          return throwError(() => error);
+        }
+
+        // Exponential backoff formula: 2^retryCount * 1000ms
+        const backoffTime = Math.pow(2, retryCount) * 1000;
+
+        this.loggingService.logWarning(`API retry attempt ${retryCount} after ${backoffTime}ms`);
+        return timer(backoffTime);
+      }
+    });
+  }
+
+  /**
+   * Handle API errors with appropriate logging and formatting
+   * @param error - HttpErrorResponse or other error
+   * @returns - Observable that throws an ApiError
+   */
+  private handleError(error: unknown): Observable<never> {
+    let apiError: ApiError;
+
+    if (error instanceof HttpErrorResponse) {
+      // Handle HTTP errors
+      let userMessage = 'An error occurred while communicating with the server.';
+
+      if (error.status === 0) {
+        userMessage = 'Unable to connect to the server. Please check your internet connection.';
+      } else if (error.status === 401) {
+        userMessage = 'Your session has expired. Please sign in again.';
+      } else if (error.status === 403) {
+        userMessage = 'You do not have permission to perform this action.';
+      } else if (error.status === 404) {
+        userMessage = 'The requested resource was not found.';
+      } else if (error.status >= 500) {
+        userMessage = 'A server error occurred. Please try again later.';
+      }
+
+      apiError = new ApiError(error, userMessage);
+
+      // Log the error
+      this.loggingService.logError('API Error', {
+        status: error.status,
+        url: error.url,
+        message: error.message,
+        error: error.error
+      });
+    } else {
+      // Handle non-HTTP errors (like timeout)
+      apiError = new ApiError(
+        new HttpErrorResponse({ error, status: 0, statusText: 'Unknown Error' }),
+        'An unexpected error occurred. Please try again.'
+      );
+
+      this.loggingService.logError('Non-HTTP API Error', error);
+    }
+
+    return throwError(() => apiError);
+  }
+}

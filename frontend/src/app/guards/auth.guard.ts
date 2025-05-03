@@ -5,7 +5,7 @@ import { map, take } from "rxjs/operators";
 import { AppState } from "../store/reducers"; // Adjust path as needed
 import { selectIsAuthenticated } from "../store/selectors/auth.selectors"; // Adjust path as needed
 
-export const authGuard: CanActivateFn = (route, state) => {
+export const authGuard: CanActivateFn = () => {
   const store = inject(Store<AppState>);
   const router = inject(Router);
 

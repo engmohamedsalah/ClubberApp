@@ -42,7 +42,7 @@ export class MatchUIHelper {
   }
 
   // Generate thumbnail URL based on match data if needed
-  static getThumbnail(match: Match): string | undefined {
+  static getThumbnail(/* match: Match */): string | undefined {
     // In a real app, this might use team data or competition to generate a relevant image URL
     // For now, return undefined since thumbnails would typically come from a media service
     return undefined;

@@ -1,19 +1,19 @@
 import { TestBed } from "@angular/core/testing";
 import { provideHttpClientTesting } from "@angular/common/http/testing";
 import { provideHttpClient } from "@angular/common/http";
-import { provideMockStore, MockStore } from "@ngrx/store/testing";
+import { provideMockStore } from "@ngrx/store/testing";
 import { AuthService } from "./auth.service";
 import { AppState } from "../store/reducers";
-import { User } from "../models/user.model";
-import { AuthResponseDto, LoginDto, RegisterDto } from "../models/auth.model";
-import { environment } from "../../environments/environment";
+// Commented out unused imports
+// import { User } from "../models/user.model";
+// import { AuthResponseDto, LoginDto, RegisterDto } from "../models/auth.model";
+// import { environment } from "../../environments/environment";
 
 
 describe("AuthService", () => {
   let service: AuthService;
-  let store: MockStore<AppState>;
   const initialState: AppState = {
-    auth: { user: null, token: null, isAuthenticated: false, error: null },
+    auth: { user: null, token: null, loading: false, error: null },
     matches: { matches: [], loading: false, error: null },
     playlist: { playlist: null, loading: false, error: null }
   };
@@ -28,7 +28,6 @@ describe("AuthService", () => {
       ]
     });
     service = TestBed.inject(AuthService);
-    store = TestBed.inject(MockStore);
   });
 
   it("should be created", () => {

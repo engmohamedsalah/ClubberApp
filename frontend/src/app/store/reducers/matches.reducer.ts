@@ -1,9 +1,22 @@
-import { createReducer, on } from "@ngrx/store";
-import { MatchesState, initialMatchesState } from "../state/matches.state";
-import * as MatchesActions from "../actions/matches.actions";
+import { createReducer, on } from '@ngrx/store';
+import { Match } from '../../models/match.model';
+import * as MatchesActions from '../actions/matches.actions';
+
+// Define the state interface directly here
+export interface MatchesState {
+  matches: Match[];
+  loading: boolean;
+  error: string | null;
+}
+
+export const initialState: MatchesState = {
+  matches: [],
+  loading: false,
+  error: null
+};
 
 export const matchesReducer = createReducer(
-  initialMatchesState,
+  initialState,
 
   // Load Matches
   on(MatchesActions.loadMatches, (state) => ({

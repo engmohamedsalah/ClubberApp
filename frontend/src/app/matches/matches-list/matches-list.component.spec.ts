@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { provideMockStore, MockStore } from "@ngrx/store/testing";
 import { MatchesListComponent } from "./matches-list.component";
 import { AppState } from "../../store/reducers";
-import { Match } from "../../models/match.model";
+import { Match, MatchStatus, MatchAvailability } from "../../models/match.model";
 import * as MatchesActions from "../../store/actions/matches.actions";
 import * as PlaylistActions from "../../store/actions/playlist.actions";
 import { selectAllMatches, selectMatchesLoading } from "../../store/selectors/matches.selectors";
@@ -72,8 +72,24 @@ describe("MatchesListComponent", () => {
   it("should display matches when loading is false and matches exist", () => {
     // Use correct Match properties (id as string, title, competition)
     const mockMatches: Match[] = [
-      { id: "guid1", title: "Match 1", competition: "Comp A", date: new Date(), status: "Live" },
-      { id: "guid2", title: "Match 2", competition: "Comp B", date: new Date(), status: "Replay" }
+      {
+        id: "guid1",
+        title: "Match 1",
+        competition: "Comp A",
+        date: new Date(),
+        status: MatchStatus.InProgress,
+        availability: MatchAvailability.Available,
+        streamURL: "https://example.com/stream1"
+      },
+      {
+        id: "guid2",
+        title: "Match 2",
+        competition: "Comp B",
+        date: new Date(),
+        status: MatchStatus.Completed,
+        availability: MatchAvailability.Available,
+        streamURL: "https://example.com/stream2"
+      }
     ];
     mockSelectAllMatches.setResult(mockMatches);
     mockSelectMatchesLoading.setResult(false);
@@ -107,7 +123,15 @@ describe("MatchesListComponent", () => {
     // Use correct Match properties
     const matchIdToAdd = "guid1";
     const mockMatches: Match[] = [
-      { id: matchIdToAdd, title: "Match 1", competition: "Comp A", date: new Date(), status: "Live" }
+      {
+        id: matchIdToAdd,
+        title: "Match 1",
+        competition: "Comp A",
+        date: new Date(),
+        status: MatchStatus.InProgress,
+        availability: MatchAvailability.Available,
+        streamURL: "https://example.com/stream1"
+      }
     ];
     mockSelectAllMatches.setResult(mockMatches);
     mockSelectMatchesLoading.setResult(false);

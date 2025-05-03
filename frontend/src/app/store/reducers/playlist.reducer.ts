@@ -1,9 +1,22 @@
 import { createReducer, on } from "@ngrx/store";
-import { PlaylistState, initialPlaylistState } from "../state/playlist.state";
+import { Playlist } from '../../models/playlist.model';
 import * as PlaylistActions from "../actions/playlist.actions";
 
+// Define the state interface directly here
+export interface PlaylistState {
+  playlist: Playlist | null;
+  loading: boolean;
+  error: string | null;
+}
+
+export const initialState: PlaylistState = {
+  playlist: null,
+  loading: false,
+  error: null
+};
+
 export const playlistReducer = createReducer(
-  initialPlaylistState,
+  initialState,
 
   // Load Playlist
   on(PlaylistActions.loadPlaylist, (state) => ({

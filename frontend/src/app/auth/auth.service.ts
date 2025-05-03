@@ -11,8 +11,9 @@ interface AuthResponse {
 }
 
 interface RegisterResponse {
-  // Define based on what your backend returns on successful registration
-  // e.g., message: string;
+  success: boolean;
+  message: string;
+  userId?: string;
 }
 
 @Injectable({
