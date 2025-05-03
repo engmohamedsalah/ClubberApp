@@ -57,3 +57,7 @@ yarn-error.log
 # SQLite development database
 *.db-shm
 *.db-wal
+
+# PID files used by development scripts
+.backend.pid
+.frontend.pid
