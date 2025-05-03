@@ -23,6 +23,7 @@ else
     echo -e "\033[1;33mNo frontend PID file found. Server might not be running.\033[0m"
 fi
 
+
 # Additionally, try to find and kill any other related processes
 echo -e "\033[1;33mChecking for remaining processes...\033[0m"
 
