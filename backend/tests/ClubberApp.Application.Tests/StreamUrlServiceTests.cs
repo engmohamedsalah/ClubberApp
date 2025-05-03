@@ -44,7 +44,8 @@ public class StreamUrlServiceTests
         { 
             Id = matchId, 
             Title = "Test Match", 
-            Status = MatchStatus.Live 
+            Status = MatchStatus.Live,
+            Availability = MatchAvailability.Available
         };
         var expectedUrl = $"https://test-stream.example.com/live/{matchId}";
 
@@ -56,6 +57,26 @@ public class StreamUrlServiceTests
     }
 
     [Fact]
+    public void GenerateStreamUrl_WithMatchObject_ShouldReturnEmptyStringForUnavailableMatch()
+    {
+        // Arrange
+        var matchId = Guid.NewGuid();
+        var match = new DomainMatch 
+        { 
+            Id = matchId, 
+            Title = "Test Match", 
+            Status = MatchStatus.Live,
+            Availability = MatchAvailability.Unavailable
+        };
+
+        // Act
+        var resultUrl = _streamUrlService.GenerateStreamUrl(match);
+
+        // Assert
+        Assert.Equal(string.Empty, resultUrl);
+    }
+
+    [Fact]
     public void GenerateStreamUrl_WithMatchObject_ShouldGenerateCorrectUrlForReplayMatch()
     {
         // Arrange
@@ -64,7 +85,8 @@ public class StreamUrlServiceTests
         { 
             Id = matchId, 
             Title = "Test Match", 
-            Status = MatchStatus.Replay 
+            Status = MatchStatus.Replay,
+            Availability = MatchAvailability.Available
         };
         var expectedUrl = $"https://test-stream.example.com/replay/{matchId}";
 

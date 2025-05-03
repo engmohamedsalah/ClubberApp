@@ -42,13 +42,13 @@ public class MatchServiceTests
         var matchId2 = Guid.NewGuid();
         var matches = new List<DomainMatch> // Use alias
         {
-            new DomainMatch { Id = matchId1, Title = "Match 1", Competition = "Comp A", Status = MatchStatus.Replay, StreamURL = "" },
-            new DomainMatch { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = MatchStatus.Live, StreamURL = "" }
+            new DomainMatch { Id = matchId1, Title = "Match 1", Competition = "Comp A", Status = MatchStatus.Replay, Availability = MatchAvailability.Available, StreamURL = "" },
+            new DomainMatch { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = MatchStatus.Live, Availability = MatchAvailability.Available, StreamURL = "" }
         };
         var matchDtos = new List<MatchDto>
         {
-            new MatchDto { Id = matchId1, Title = "Match 1", Competition = "Comp A", Status = "Replay", StreamURL = "" },
-            new MatchDto { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = "Live", StreamURL = "" }
+            new MatchDto { Id = matchId1, Title = "Match 1", Competition = "Comp A", Status = "Replay", Availability = "Available", StreamURL = "" },
+            new MatchDto { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = "Live", Availability = "Available", StreamURL = "" }
         };
 
         _mockMatchRepository.Setup(repo => repo.GetAllAsync()).ReturnsAsync(matches);
@@ -78,15 +78,15 @@ public class MatchServiceTests
 
         var allMatches = new List<DomainMatch>
         {
-            new DomainMatch { Id = matchId1, Title = "Match 1", Competition = "Comp A", Status = MatchStatus.Replay, StreamURL = "" },
-            new DomainMatch { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = MatchStatus.Live, StreamURL = "" },
-            new DomainMatch { Id = matchId3, Title = "Match 3", Competition = "Comp C", Status = MatchStatus.Live, StreamURL = "" }
+            new DomainMatch { Id = matchId1, Title = "Match 1", Competition = "Comp A", Status = MatchStatus.Replay, Availability = MatchAvailability.Available, StreamURL = "" },
+            new DomainMatch { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = MatchStatus.Live, Availability = MatchAvailability.Available, StreamURL = "" },
+            new DomainMatch { Id = matchId3, Title = "Match 3", Competition = "Comp C", Status = MatchStatus.Live, Availability = MatchAvailability.Available, StreamURL = "" }
         };
         var liveMatches = allMatches.Where(m => m.Status == statusToFetch).ToList();
         var liveMatchDtos = new List<MatchDto>
         {
-            new MatchDto { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = "Live", StreamURL = "" },
-            new MatchDto { Id = matchId3, Title = "Match 3", Competition = "Comp C", Status = "Live", StreamURL = "" }
+            new MatchDto { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = "Live", Availability = "Available", StreamURL = "" },
+            new MatchDto { Id = matchId3, Title = "Match 3", Competition = "Comp C", Status = "Live", Availability = "Available", StreamURL = "" }
         };
 
         // Mock the specific repository method being called by the service
@@ -112,8 +112,8 @@ public class MatchServiceTests
     {
         // Arrange
         var matchId = Guid.NewGuid(); // Use Guid
-        var match = new DomainMatch { Id = matchId, Title = "Match 1", Competition = "Comp A", Status = MatchStatus.Replay, StreamURL = "" }; // Use alias and correct properties
-        var matchDto = new MatchDto { Id = matchId, Title = "Match 1", Competition = "Comp A", Status = "Replay", StreamURL = "" };
+        var match = new DomainMatch { Id = matchId, Title = "Match 1", Competition = "Comp A", Status = MatchStatus.Replay, Availability = MatchAvailability.Available, StreamURL = "" }; // Use alias and correct properties
+        var matchDto = new MatchDto { Id = matchId, Title = "Match 1", Competition = "Comp A", Status = "Replay", Availability = "Available", StreamURL = "" };
         var generatedStreamUrl = $"https://stream.example.com/replay/{matchId}";
 
         _mockMatchRepository.Setup(repo => repo.GetByIdAsync(matchId)).ReturnsAsync(match);
@@ -167,6 +167,7 @@ public class MatchServiceTests
             Title = "New Match", 
             Competition = "Football", 
             Status = MatchStatus.Live,
+            Availability = MatchAvailability.Available,
             StreamURL = "" 
         };
         var matchDto = new MatchDto 
@@ -175,6 +176,7 @@ public class MatchServiceTests
             Title = "New Match", 
             Competition = "Football", 
             Status = "Live",
+            Availability = "Available",
             StreamURL = "" 
         };
         var generatedStreamUrl = $"https://stream.example.com/live/{matchId}";
@@ -218,6 +220,7 @@ public class MatchServiceTests
             Title = "Old Match", 
             Competition = "Football", 
             Status = MatchStatus.Live,
+            Availability = MatchAvailability.Available,
             StreamURL = "" 
         };
         var generatedStreamUrl = $"https://stream.example.com/replay/{matchId}";
