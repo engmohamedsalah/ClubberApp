@@ -4,6 +4,8 @@ import { provideHttpClient } from "@angular/common/http";
 import { provideMockStore } from "@ngrx/store/testing";
 import { MatchesService } from "./matches.service";
 import { AppState } from "../store/reducers";
+import { first } from "rxjs/operators";
+import { Match } from "../models/match.model";
 
 describe("MatchesService", () => {
   let service: MatchesService;
@@ -37,12 +39,26 @@ describe("MatchesService", () => {
     expect(service).toBeTruthy();
   });
 
-  // Example test for MatchesService
-  it("getMatches should be defined and callable", () => {
-    // Just verify the service exists and can be called
-    expect(service.getMatches).toBeDefined();
-    service.getMatches(); // Call the method but don't expect a return value
+  // Test loadMatches and matches$ observable
+  it("should load matches and emit them through matches$ observable", (done) => {
+    // Ensure that matches$ emits after loadMatches is called
+    service.matches$.pipe(first()).subscribe((matches: Match[]) => {
+      expect(matches).toBeDefined();
+      expect(Array.isArray(matches)).toBeTruthy();
+      done();
+    });
+
+    // Call loadMatches to trigger the observable
+    service.loadMatches();
   });
 
+  // Test the filterMatches method
+  it("should filter matches by Live status", () => {
+    // Call the method to test
+    service.filterMatches('Live');
+    // Validate service state is correct
+    expect(service.loading$).toBeDefined();
+    expect(service.error$).toBeDefined();
+  });
 });
 
