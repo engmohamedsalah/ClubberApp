@@ -9,6 +9,5 @@ public interface IPlaylistRepository
     Task<IEnumerable<Match>> GetMatchesByUserIdAsync(Guid userId);
     Task AddAsync(Playlist playlistEntry);
     void Remove(Playlist playlistEntry);
-    // Note: IUnitOfWork will handle SaveChangesAsync
 }
 

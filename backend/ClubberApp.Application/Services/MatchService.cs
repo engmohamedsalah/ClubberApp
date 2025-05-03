@@ -24,8 +24,14 @@ public class MatchService : IMatchService
 
     public async Task<IEnumerable<MatchDto>> GetAllMatchesAsync()
     {
-        var matches = await _unitOfWork.MatchRepository.GetAllAsync();
-        return EnrichMatchDtos(matches, matches);
+        var parameters = new MatchSearchParameters
+        {
+            Page = 1,
+            PageSize = int.MaxValue
+        };
+        
+        var result = await _unitOfWork.MatchRepository.SearchMatchesAsync(parameters);
+        return EnrichMatchDtos(result.Items, result.Items);
     }
 
     public async Task<MatchDto?> GetMatchByIdAsync(Guid id)
@@ -99,30 +105,67 @@ public class MatchService : IMatchService
     {
         // Convert DTO status to domain status for repository call
         var domainStatus = _mapper.Map<Domain.Entities.MatchStatus>(status);
-        var matches = await _unitOfWork.MatchRepository.GetMatchesByStatusAsync(domainStatus);
-        return EnrichMatchDtos(matches, matches);
+        
+        var parameters = new MatchSearchParameters
+        {
+            Status = domainStatus,
+            Page = 1,
+            PageSize = int.MaxValue
+        };
+        
+        var result = await _unitOfWork.MatchRepository.SearchMatchesAsync(parameters);
+        return EnrichMatchDtos(result.Items, result.Items);
     }
 
     // Updated to use Enums.MatchStatus instead of DTOs.MatchStatus
     public async Task<IEnumerable<MatchDto>> SearchMatchesAsync(string? searchTerm, Enums.MatchStatus? status)
     {
-        // Get all matches and filter in memory since FindAsync is not available
-        var allMatches = await _unitOfWork.MatchRepository.GetAllAsync();
-        var filteredMatches = FilterMatches(allMatches, searchTerm, status);
-        return EnrichMatchDtos(filteredMatches, allMatches);
+        // Convert DTO status to domain status for repository call
+        Domain.Entities.MatchStatus? domainStatus = null;
+        if (status.HasValue)
+        {
+            domainStatus = _mapper.Map<Domain.Entities.MatchStatus>(status.Value);
+        }
+        
+        var parameters = new MatchSearchParameters
+        {
+            CompetitionName = searchTerm,
+            Status = domainStatus,
+            Page = 1,
+            PageSize = int.MaxValue
+        };
+        
+        var result = await _unitOfWork.MatchRepository.SearchMatchesAsync(parameters);
+        return EnrichMatchDtos(result.Items, result.Items);
     }
 
     // Updated to use Enums.MatchStatus instead of DTOs.MatchStatus
-    public async Task<PaginatedResult<MatchDto>> SearchMatchesPaginatedAsync(string? searchTerm, Enums.MatchStatus? status, int page, int pageSize)
+    public async Task<PaginatedResult<MatchDto>> SearchMatchesPaginatedAsync(string? searchTerm, Enums.MatchStatus? status, int page, int pageSize, string? sortBy = null, bool sortDescending = false)
     {
-        var allMatches = await _unitOfWork.MatchRepository.GetAllAsync();
-        var filteredMatches = FilterMatches(allMatches, searchTerm, status);
+        // Map DTO status to domain status if provided
+        Domain.Entities.MatchStatus? domainStatus = null;
+        if (status.HasValue)
+        {
+            domainStatus = _mapper.Map<Domain.Entities.MatchStatus>(status.Value);
+        }
         
-        var totalCount = filteredMatches.Count();
-        var paged = filteredMatches.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        var pagedDtos = EnrichMatchDtos(paged, allMatches);
+        var parameters = new MatchSearchParameters
+        {
+            CompetitionName = searchTerm,
+            Status = domainStatus,
+            Page = page,
+            PageSize = pageSize,
+            SortBy = sortBy,
+            SortDescending = sortDescending
+        };
         
-        return new PaginatedResult<MatchDto>(pagedDtos, page, pageSize, totalCount);
+        // Use the repository method for efficient database querying
+        var result = await _unitOfWork.MatchRepository.SearchMatchesAsync(parameters);
+        
+        // Map to DTOs and enrich
+        var matchDtos = EnrichMatchDtos(result.Items, result.Items);
+        
+        return new PaginatedResult<MatchDto>(matchDtos, result.Page, result.PageSize, result.TotalCount);
     }
     
     // Private helper methods to reduce code duplication

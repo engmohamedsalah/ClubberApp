@@ -9,7 +9,7 @@ public interface IMatchService
     Task<IEnumerable<MatchDto>> GetMatchesByStatusAsync(MatchStatus status);
     Task<IEnumerable<MatchDto>> SearchMatchesAsync(string? searchTerm, MatchStatus? status);
     Task<MatchDto?> GetMatchByIdAsync(Guid id);
-    Task<PaginatedResult<MatchDto>> SearchMatchesPaginatedAsync(string? searchTerm, MatchStatus? status, int page, int pageSize);
+    Task<PaginatedResult<MatchDto>> SearchMatchesPaginatedAsync(string? searchTerm, MatchStatus? status, int page, int pageSize, string? sortBy = null, bool sortDescending = false);
     // CRUD operations
     Task<MatchDto> CreateMatchAsync(MatchDto matchDto);
     Task<bool> UpdateMatchAsync(Guid id, MatchDto matchDto);

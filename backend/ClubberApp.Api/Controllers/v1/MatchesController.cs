@@ -26,16 +26,24 @@ public class MatchesController : ControllerBase
     /// <param name="status">Match status to filter by.</param>
     /// <param name="page">Page number for pagination.</param>
     /// <param name="pageSize">Page size for pagination.</param>
+    /// <param name="sortBy">Field to sort by (title, competition, date, status).</param>
+    /// <param name="sortDescending">Whether to sort in descending order.</param>
     /// <returns>List of matches.</returns>
     [HttpGet]
-    public async Task<IActionResult> GetMatches([FromQuery] string? competition, [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetMatches(
+        [FromQuery] string? competition, 
+        [FromQuery] string? status, 
+        [FromQuery] int page = 1, 
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? sortBy = "date",
+        [FromQuery] bool sortDescending = false)
     {
         var matchStatus = (MatchStatus?)null;
         if (!string.IsNullOrEmpty(status) && Enum.TryParse<MatchStatus>(status, true, out var parsedStatus))
         {
             matchStatus = parsedStatus;
         }
-        var paginated = await _matchService.SearchMatchesPaginatedAsync(competition, matchStatus, page, pageSize);
+        var paginated = await _matchService.SearchMatchesPaginatedAsync(competition, matchStatus, page, pageSize, sortBy, sortDescending);
         return Ok(paginated);
     }
 
@@ -63,9 +71,9 @@ public class MatchesController : ControllerBase
     /// Gets all live matches.
     /// </summary>
     [HttpGet("live")]
-    public async Task<IActionResult> GetLiveMatches()
+    public async Task<IActionResult> GetLiveMatches([FromQuery] string? sortBy = "date", [FromQuery] bool sortDescending = false)
     {
-        var paginated = await _matchService.SearchMatchesPaginatedAsync(null, MatchStatus.InProgress, 1, 100);
+        var paginated = await _matchService.SearchMatchesPaginatedAsync(null, MatchStatus.InProgress, 1, 100, sortBy, sortDescending);
         return Ok(paginated.Data); // Return just the list for compatibility with tests
     }
 

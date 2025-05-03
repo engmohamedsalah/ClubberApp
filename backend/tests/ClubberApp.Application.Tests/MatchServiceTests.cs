@@ -52,8 +52,9 @@ public class MatchServiceTests
             new MatchDto { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = Enums.MatchStatus.InProgress, Availability = Enums.MatchAvailability.Available, StreamURL = "" }
         };
 
-        _mockMatchRepository.Setup(repo => repo.GetAllAsync()).ReturnsAsync(matches);
-        _mockMapper.Setup(m => m.Map<IEnumerable<MatchDto>>(matches)).Returns(matchDtos);
+        _mockMatchRepository.Setup(repo => repo.SearchMatchesAsync(It.IsAny<MatchSearchParameters>()))
+                          .ReturnsAsync(new SearchResult<DomainMatch>(matches, matches.Count, 1, int.MaxValue));
+        _mockMapper.Setup(m => m.Map<List<MatchDto>>(matches)).Returns(matchDtos.ToList());
         _mockStreamUrlService.Setup(s => s.GenerateStreamUrl(It.IsAny<DomainMatch>()))
             .Returns<DomainMatch>(m => $"https://stream.example.com/{m.Status.ToString().ToLower()}/{m.Id}");
 
@@ -63,8 +64,12 @@ public class MatchServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Count());
-        _mockMatchRepository.Verify(repo => repo.GetAllAsync(), Times.Once);
-        _mockMapper.Verify(m => m.Map<IEnumerable<MatchDto>>(matches), Times.Once);
+        _mockMatchRepository.Verify(repo => repo.SearchMatchesAsync(It.Is<MatchSearchParameters>(p => 
+            p.Page == 1 && 
+            p.PageSize == int.MaxValue && 
+            p.Status == null && 
+            p.CompetitionName == null)), Times.Once);
+        _mockMapper.Verify(m => m.Map<List<MatchDto>>(matches), Times.Once);
         _mockStreamUrlService.Verify(s => s.GenerateStreamUrl(It.IsAny<DomainMatch>()), Times.Exactly(2));
     }
 
@@ -94,10 +99,12 @@ public class MatchServiceTests
         // Set up mapper to convert between domain and DTO enums
         _mockMapper.Setup(m => m.Map<Domain.Entities.MatchStatus>(dtoStatusToFetch)).Returns(domainStatusToFetch);
 
-        // Mock the specific repository method being called by the service
-        _mockMatchRepository.Setup(repo => repo.GetMatchesByStatusAsync(domainStatusToFetch))
-                           .ReturnsAsync(liveMatches);
-        _mockMapper.Setup(m => m.Map<IEnumerable<MatchDto>>(liveMatches)).Returns(liveMatchDtos);
+        // Mock the repository's SearchMatchesAsync method
+        _mockMatchRepository.Setup(repo => repo.SearchMatchesAsync(It.Is<MatchSearchParameters>(p => p.Status == domainStatusToFetch)))
+                          .ReturnsAsync(new SearchResult<DomainMatch>(liveMatches, liveMatches.Count, 1, int.MaxValue));
+        
+        _mockMapper.Setup(m => m.Map<List<MatchDto>>(liveMatches)).Returns(liveMatchDtos.ToList());
+        
         _mockStreamUrlService.Setup(s => s.GenerateStreamUrl(It.IsAny<DomainMatch>()))
             .Returns<DomainMatch>(m => $"https://stream.example.com/{m.Status.ToString().ToLower()}/{m.Id}");
 
@@ -107,8 +114,11 @@ public class MatchServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Count());
-        _mockMatchRepository.Verify(repo => repo.GetMatchesByStatusAsync(domainStatusToFetch), Times.Once);
-        _mockMapper.Verify(m => m.Map<IEnumerable<MatchDto>>(liveMatches), Times.Once);
+        _mockMatchRepository.Verify(repo => repo.SearchMatchesAsync(It.Is<MatchSearchParameters>(p => 
+            p.Status == domainStatusToFetch && 
+            p.Page == 1 && 
+            p.PageSize == int.MaxValue)), Times.Once);
+        _mockMapper.Verify(m => m.Map<List<MatchDto>>(liveMatches), Times.Once);
         _mockStreamUrlService.Verify(s => s.GenerateStreamUrl(It.IsAny<DomainMatch>()), Times.Exactly(2));
     }
 
@@ -237,6 +247,112 @@ public class MatchServiceTests
         _mockStreamUrlService.Verify(s => s.GenerateStreamUrl(existingMatch), Times.Once);
         _mockMatchRepository.Verify(r => r.Update(existingMatch), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task SearchMatchesAsync_ShouldReturnMatchesFilteredBySearchTerm()
+    {
+        // Arrange
+        var matchId1 = Guid.NewGuid();
+        var matchId2 = Guid.NewGuid();
+        var matchId3 = Guid.NewGuid();
+        var searchTerm = "Football";
+        var domainStatusToFetch = (Domain.Entities.MatchStatus?)null;
+        var dtoStatusToFetch = (Enums.MatchStatus?)null;
+
+        var filteredMatches = new List<DomainMatch>
+        {
+            new DomainMatch { Id = matchId1, Title = "Football Match 1", Competition = "Football League", Status = Domain.Entities.MatchStatus.Replay, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" },
+            new DomainMatch { Id = matchId2, Title = "Football Match 2", Competition = "Football Cup", Status = Domain.Entities.MatchStatus.Live, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" }
+        };
+        
+        var filteredMatchDtos = new List<MatchDto>
+        {
+            new MatchDto { Id = matchId1, Title = "Football Match 1", Competition = "Football League", Status = Enums.MatchStatus.Completed, Availability = Enums.MatchAvailability.Available, StreamURL = "" },
+            new MatchDto { Id = matchId2, Title = "Football Match 2", Competition = "Football Cup", Status = Enums.MatchStatus.InProgress, Availability = Enums.MatchAvailability.Available, StreamURL = "" }
+        };
+
+        // Mock the repository's SearchMatchesAsync method
+        _mockMatchRepository.Setup(repo => repo.SearchMatchesAsync(It.Is<MatchSearchParameters>(p => 
+            p.CompetitionName == searchTerm && 
+            p.Status == null)))
+                      .ReturnsAsync(new SearchResult<DomainMatch>(filteredMatches, filteredMatches.Count, 1, int.MaxValue));
+        
+        _mockMapper.Setup(m => m.Map<List<MatchDto>>(filteredMatches)).Returns(filteredMatchDtos.ToList());
+        
+        _mockStreamUrlService.Setup(s => s.GenerateStreamUrl(It.IsAny<DomainMatch>()))
+            .Returns<DomainMatch>(m => $"https://stream.example.com/{m.Status.ToString().ToLower()}/{m.Id}");
+
+        // Act
+        var result = await _matchService.SearchMatchesAsync(searchTerm, dtoStatusToFetch);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count());
+        _mockMatchRepository.Verify(repo => repo.SearchMatchesAsync(It.Is<MatchSearchParameters>(p => 
+            p.CompetitionName == searchTerm && 
+            p.Status == null && 
+            p.Page == 1 && 
+            p.PageSize == int.MaxValue)), Times.Once);
+        _mockMapper.Verify(m => m.Map<List<MatchDto>>(filteredMatches), Times.Once);
+        _mockStreamUrlService.Verify(s => s.GenerateStreamUrl(It.IsAny<DomainMatch>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task SearchMatchesPaginatedAsync_ShouldReturnPaginatedResultsWithTotalCount()
+    {
+        // Arrange
+        var matchId1 = Guid.NewGuid();
+        var matchId2 = Guid.NewGuid();
+        var matchId3 = Guid.NewGuid();
+        var searchTerm = "Football";
+        var domainStatusToFetch = (Domain.Entities.MatchStatus?)null;
+        var dtoStatusToFetch = (Enums.MatchStatus?)null;
+        var page = 1;
+        var pageSize = 2;
+        var totalCount = 3;
+
+        var pagedMatches = new List<DomainMatch>
+        {
+            new DomainMatch { Id = matchId1, Title = "Football Match 1", Competition = "Football League", Status = Domain.Entities.MatchStatus.Replay, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" },
+            new DomainMatch { Id = matchId2, Title = "Football Match 2", Competition = "Football Cup", Status = Domain.Entities.MatchStatus.Live, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" }
+        };
+        
+        var pagedMatchDtos = new List<MatchDto>
+        {
+            new MatchDto { Id = matchId1, Title = "Football Match 1", Competition = "Football League", Status = Enums.MatchStatus.Completed, Availability = Enums.MatchAvailability.Available, StreamURL = "" },
+            new MatchDto { Id = matchId2, Title = "Football Match 2", Competition = "Football Cup", Status = Enums.MatchStatus.InProgress, Availability = Enums.MatchAvailability.Available, StreamURL = "" }
+        };
+
+        // Mock the repository's SearchMatchesAsync method
+        _mockMatchRepository.Setup(repo => repo.SearchMatchesAsync(It.Is<MatchSearchParameters>(p => 
+            p.CompetitionName == searchTerm && 
+            p.Status == null &&
+            p.Page == page &&
+            p.PageSize == pageSize)))
+                      .ReturnsAsync(new SearchResult<DomainMatch>(pagedMatches, totalCount, page, pageSize));
+        
+        _mockMapper.Setup(m => m.Map<List<MatchDto>>(pagedMatches)).Returns(pagedMatchDtos.ToList());
+        
+        _mockStreamUrlService.Setup(s => s.GenerateStreamUrl(It.IsAny<DomainMatch>()))
+            .Returns<DomainMatch>(m => $"https://stream.example.com/{m.Status.ToString().ToLower()}/{m.Id}");
+
+        // Act
+        var result = await _matchService.SearchMatchesPaginatedAsync(searchTerm, dtoStatusToFetch, page, pageSize);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(page, result.Page);
+        Assert.Equal(pageSize, result.PageSize);
+        Assert.Equal(totalCount, result.TotalCount);
+        Assert.Equal(2, result.Data.Count());
+        _mockMatchRepository.Verify(repo => repo.SearchMatchesAsync(It.Is<MatchSearchParameters>(p => 
+            p.CompetitionName == searchTerm && 
+            p.Status == null &&
+            p.Page == page &&
+            p.PageSize == pageSize)), Times.Once);
+        _mockMapper.Verify(m => m.Map<List<MatchDto>>(pagedMatches), Times.Once);
+        _mockStreamUrlService.Verify(s => s.GenerateStreamUrl(It.IsAny<DomainMatch>()), Times.Exactly(2));
     }
 }
 
