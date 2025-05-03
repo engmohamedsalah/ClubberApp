@@ -4,6 +4,24 @@ This project is a web application built to fulfill the "My Sports Playlist" chal
 
 The application follows Clean Architecture principles for the backend and utilizes NgRx for state management in the Angular frontend.
 
+## Development Scripts
+
+For easier development, use these convenient scripts from the project root:
+
+- **Start both servers:**
+  ```bash
+  ./start-dev.sh
+  ```
+  This starts both the .NET backend and Angular frontend servers in a single command.
+
+- **Stop both servers:**
+  ```bash
+  ./stop-dev.sh
+  ```
+  This stops both servers and cleans up any processes.
+
+These scripts handle proper process management and provide clear feedback about the running services.
+
 ## Project Structure
 
 ```
@@ -23,6 +41,8 @@ The application follows Clean Architecture principles for the backend and utiliz
 │   │   └── ClubberApp.Application.Tests/
 │   ├── ClubberApp.sln    # .NET Solution File
 │   └── global.json       # .NET SDK Version Pinning
+├── start-dev.sh      # Script to start both frontend and backend
+├── stop-dev.sh       # Script to stop both servers
 └── README.md         # This file
 ```
 
@@ -87,7 +107,7 @@ The backend follows Clean Architecture principles, separating concerns into dist
     ```bash
     dotnet test
     ```
-    *Note: Some API integration tests might still have compilation errors related to `CustomWebApplicationFactory` accessibility that need resolving.* 
+    *Note: Some API integration tests might still have compilation errors related to `CustomWebApplicationFactory` accessibility that need resolving.*
 
 ### API Endpoints
 
@@ -128,7 +148,7 @@ The backend follows Clean Architecture principles, separating concerns into dist
     ```bash
     ng test --watch=false --browsers=ChromeHeadless
     ```
-    *Note: The tests should now pass after the recent fixes. If issues persist, further debugging might be needed.* 
+    *Note: The tests should now pass after the recent fixes. If issues persist, further debugging might be needed.*
 
 ## Next Steps & Improvements
 
