@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { Actions, createEffect, ofType } from "@ngrx/effects";
-import { AuthService } from "../auth.service";
+import { AuthService } from "../../auth/auth.service";
 import * as AuthActions from "../../store/actions/auth.actions";
 import { catchError, map, mergeMap, tap } from "rxjs/operators";
 import { of } from "rxjs";
@@ -17,7 +17,7 @@ export class AuthEffects {
           map(response => {
             // Save token and user info to local storage
             localStorage.setItem("authToken", response.token);
-            localStorage.setItem("authUser", JSON.stringify(response.user)); 
+            localStorage.setItem("authUser", JSON.stringify(response.user));
             return AuthActions.loginSuccess({ user: response.user, token: response.token });
           }),
           catchError(error => {

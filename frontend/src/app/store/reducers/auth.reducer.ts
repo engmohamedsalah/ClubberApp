@@ -20,7 +20,7 @@ export const authReducer = createReducer(
   initialState,
 
   // Login
-  on(AuthActions.loginRequest, (state) => ({
+  on(AuthActions.login, (state) => ({
     ...state,
     loading: true,
     error: null,
@@ -41,7 +41,7 @@ export const authReducer = createReducer(
   })),
 
   // Register
-  on(AuthActions.registerRequest, (state) => ({
+  on(AuthActions.register, (state) => ({
     ...state,
     loading: true,
     error: null,
