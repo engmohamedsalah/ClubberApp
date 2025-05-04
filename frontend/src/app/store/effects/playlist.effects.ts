@@ -12,6 +12,13 @@ import { Playlist } from "../../models/playlist.model";
 @Injectable()
 export class PlaylistEffects {
 
+  constructor(
+    private actions$: Actions,
+    private playlistService: PlaylistService
+    // Optional: Inject notification service
+    // private toastr: ToastrService
+  ) {}
+
   loadPlaylist$ = createEffect(() =>
     this.actions$.pipe(
       ofType(PlaylistActions.loadPlaylist),
@@ -28,7 +35,7 @@ export class PlaylistEffects {
             return PlaylistActions.loadPlaylistSuccess({ playlist });
           }),
           catchError(error => {
-            const errorMessage = error.error?.message || error.message || "Failed to load playlist";
+            const errorMessage = error?.error?.message || error?.message || "Failed to load playlist";
             return of(PlaylistActions.loadPlaylistFailure({ error: errorMessage }));
           })
         );
@@ -63,7 +70,7 @@ export class PlaylistEffects {
             return PlaylistActions.addMatchToPlaylistSuccess({ playlist });
           }),
           catchError(error => {
-            const errorMessage = error.error?.message || error.message || "Failed to add match to playlist";
+            const errorMessage = error?.error?.message || error?.message || "Failed to add match to playlist";
             return of(PlaylistActions.addMatchToPlaylistFailure({ error: errorMessage }));
           })
         );
@@ -87,19 +94,12 @@ export class PlaylistEffects {
             return PlaylistActions.removeMatchFromPlaylistSuccess({ playlist });
           }),
           catchError(error => {
-            const errorMessage = error.error?.message || error.message || "Failed to remove match from playlist";
+            const errorMessage = error?.error?.message || error?.message || "Failed to remove match from playlist";
             return of(PlaylistActions.removeMatchFromPlaylistFailure({ error: errorMessage }));
           })
         );
       })
     )
   );
-
-  constructor(
-    private actions$: Actions,
-    private playlistService: PlaylistService
-    // Optional: Inject notification service
-    // private toastr: ToastrService
-  ) {}
 }
 

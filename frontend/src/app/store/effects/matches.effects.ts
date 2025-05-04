@@ -20,7 +20,7 @@ export class MatchesEffects {
           take(1),
           map(matches => MatchesActions.loadMatchesSuccess({ matches })),
           catchError(error => {
-            const errorMessage = error.error?.message || error.message || "Failed to load matches";
+            const errorMessage = error?.error?.message || error?.message || "Failed to load matches";
             return of(MatchesActions.loadMatchesFailure({ error: errorMessage }));
           })
         );
