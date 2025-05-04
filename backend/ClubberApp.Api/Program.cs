@@ -25,10 +25,6 @@ if (!string.Equals(env, "Test", StringComparison.OrdinalIgnoreCase))
 
 // 2. Repositories & Unit of Work
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-// Repositories are often registered via UnitOfWork, but can be registered individually if needed elsewhere
-// builder.Services.AddScoped<IUserRepository, UserRepository>();
-// builder.Services.AddScoped<IMatchRepository, MatchRepository>();
-// builder.Services.AddScoped<IPlaylistRepository, PlaylistRepository>();
 
 // 3. Services
 builder.Services.AddScoped<IAuthService, AuthService>();
