@@ -9,8 +9,8 @@ import { Router } from "@angular/router";
 @Injectable()
 export class AuthEffects {
 
-  login$ = createEffect(() =>
-    this.actions$.pipe(
+  login$ = createEffect(() => {
+    return this.actions$.pipe(
       ofType(AuthActions.login),
       mergeMap(action =>
         this.authService.login(action.username, action.password).pipe(
@@ -26,21 +26,20 @@ export class AuthEffects {
           })
         )
       )
-    )
-  );
+    );
+  });
 
-  loginSuccess$ = createEffect(() =>
-    this.actions$.pipe(
+  loginSuccess$ = createEffect(() => {
+    return this.actions$.pipe(
       ofType(AuthActions.loginSuccess),
       tap(() => {
         this.router.navigate(["/playlist"]); // Navigate to playlist page on successful login
       })
-    ),
-    { dispatch: false } // No action dispatched from this effect
-  );
+    );
+  }, { dispatch: false }); // No action dispatched from this effect
 
-  register$ = createEffect(() =>
-    this.actions$.pipe(
+  register$ = createEffect(() => {
+    return this.actions$.pipe(
       ofType(AuthActions.register),
       mergeMap(action =>
         this.authService.register(action.username, action.email, action.password).pipe(
@@ -51,31 +50,29 @@ export class AuthEffects {
           })
         )
       )
-    )
-  );
+    );
+  });
 
-  registerSuccess$ = createEffect(() =>
-    this.actions$.pipe(
+  registerSuccess$ = createEffect(() => {
+    return this.actions$.pipe(
       ofType(AuthActions.registerSuccess),
       tap(() => {
         // Optionally show a success message
         this.router.navigate(["/auth/login"]); // Navigate to login page after successful registration
       })
-    ),
-    { dispatch: false }
-  );
+    );
+  }, { dispatch: false });
 
-  logout$ = createEffect(() =>
-    this.actions$.pipe(
+  logout$ = createEffect(() => {
+    return this.actions$.pipe(
       ofType(AuthActions.logout),
       tap(() => {
         localStorage.removeItem("authToken");
         localStorage.removeItem("authUser");
         this.router.navigate(["/auth/login"]); // Navigate to login page on logout
       })
-    ),
-    { dispatch: false }
-  );
+    );
+  }, { dispatch: false });
 
   constructor(
     private actions$: Actions,
