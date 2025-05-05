@@ -14,9 +14,7 @@ public class MappingProfile : Profile
         CreateMap<RegisterDto, User>(); // Note: Password hashing handled separately
 
         // Match Mappings - Updated for unified DTO with enum support
-        CreateMap<Match, MatchDto>()
-            .ForMember(dest => dest.IsLive, opt => opt.Ignore())
-            .ForMember(dest => dest.IsReplay, opt => opt.Ignore());
+        CreateMap<Match, MatchDto>();
         
         // Domain to DTO mapping (with status mapping)
         CreateMap<Domain.Entities.MatchStatus, Enums.MatchStatus>()
@@ -56,7 +54,8 @@ public class MappingProfile : Profile
         {
             Enums.MatchStatus.InProgress => Domain.Entities.MatchStatus.Live,
             Enums.MatchStatus.Completed => Domain.Entities.MatchStatus.Replay,
-            _ => Domain.Entities.MatchStatus.Live // Default case - may need adjustment
+            Enums.MatchStatus.NotStarted => Domain.Entities.MatchStatus.Replay, // Maps to Replay to allow access to not started matches
+            _ => Domain.Entities.MatchStatus.Replay // Default case
         };
     }
     
@@ -66,8 +65,8 @@ public class MappingProfile : Profile
         return availability switch
         {
             Domain.Entities.MatchAvailability.Unavailable => Enums.MatchAvailability.Unavailable,
-            Domain.Entities.MatchAvailability.Scheduled => Enums.MatchAvailability.Unavailable,
             Domain.Entities.MatchAvailability.Restricted => Enums.MatchAvailability.Unavailable,
+            Domain.Entities.MatchAvailability.Scheduled => Enums.MatchAvailability.Available, // Scheduled matches should be available
             _ => Enums.MatchAvailability.Available
         };
     }
@@ -77,6 +76,7 @@ public class MappingProfile : Profile
         return availability switch
         {
             Enums.MatchAvailability.Unavailable => Domain.Entities.MatchAvailability.Unavailable,
+            Enums.MatchAvailability.Available => Domain.Entities.MatchAvailability.Available,
             _ => Domain.Entities.MatchAvailability.Available
         };
     }
