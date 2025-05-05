@@ -2,11 +2,12 @@ import { Component, HostBinding, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { Observable, filter, map } from 'rxjs';
+import { ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ReactiveFormsModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
@@ -24,9 +25,12 @@ export class AppComponent implements OnInit {
   ) {
     // Track if we're on the home page (/ route)
     this.isHomePage$ = this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd),
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
       map((event: NavigationEnd) => event.urlAfterRedirects === '/' || event.urlAfterRedirects === '')
-    ) as Observable<boolean>;
+    );
+
+    // Check if user is logged in (basic implementation)
+    this.checkLoginStatus();
   }
 
   ngOnInit(): void {
@@ -46,6 +50,7 @@ export class AppComponent implements OnInit {
 
   // Logout user
   logout(): void {
+    localStorage.removeItem('authUser');
     this.isLoggedIn = false;
     this.router.navigate(['/']);
   }
@@ -55,6 +60,12 @@ export class AppComponent implements OnInit {
     // This is a placeholder. In a real app, the folders would be created during build
     console.log('Ensuring assets folders exist...');
     // In development, we could check if the folders exist and create them if needed
+  }
+
+  // Check if user is logged in
+  private checkLoginStatus(): void {
+    const user = localStorage.getItem('authUser');
+    this.isLoggedIn = !!user;
   }
 }
 
