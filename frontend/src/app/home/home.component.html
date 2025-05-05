@@ -1,0 +1,156 @@
+<div class="container mx-auto px-4 py-8">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="flex justify-center items-center py-12">
+    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
+    <p class="text-red-700">{{ error }}</p>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!loading && !error">
+    <!-- Welcome Section -->
+    <section class="mb-10">
+      <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+        <h1 class="text-3xl font-bold mb-2">Welcome back, {{ username }}!</h1>
+        <div class="flex items-center space-x-4 mt-4">
+          <div class="bg-white bg-opacity-20 rounded-lg p-3">
+            <span class="block text-2xl font-bold">{{ playlistCount }}</span>
+            <span class="text-sm opacity-90">{{ playlistCount === 1 ? 'Match' : 'Matches' }} in your playlist</span>
+          </div>
+
+          <div class="flex space-x-4 ml-auto">
+            <a routerLink="/matches" class="bg-white text-indigo-700 px-4 py-2 rounded-lg font-medium hover:bg-opacity-90 transition duration-150">
+              Browse Matches
+            </a>
+            <a routerLink="/playlist" class="bg-transparent border border-white px-4 py-2 rounded-lg font-medium hover:bg-white hover:bg-opacity-10 transition duration-150">
+              My Playlist
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Now Section -->
+    <section class="mb-10">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">Live Now</h2>
+        <a routerLink="/matches" [queryParams]="{filter: 'Live'}" class="text-indigo-600 hover:text-indigo-800">See all</a>
+      </div>
+
+      <div *ngIf="liveMatches.length === 0" class="bg-gray-50 rounded-lg p-8 text-center border border-gray-200">
+        <p class="text-gray-600">No live matches at the moment. Check back soon!</p>
+      </div>
+
+      <div *ngIf="liveMatches.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div *ngFor="let match of liveMatches" class="bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition duration-200">
+          <div class="relative">
+            <!-- Match image could be a placeholder or generated from competition/teams -->
+            <div class="bg-gray-200 aspect-video"></div>
+            <span class="absolute top-3 right-3 bg-red-600 text-white text-xs px-2 py-1 rounded-full flex items-center">
+              <span class="w-2 h-2 bg-white rounded-full mr-1 animate-pulse"></span>
+              LIVE
+            </span>
+          </div>
+          <div class="p-4">
+            <h3 class="font-bold text-lg mb-1">{{ match.title }}</h3>
+            <p class="text-gray-600 text-sm mb-2">{{ match.competition }}</p>
+            <div class="flex justify-between items-center mt-4">
+              <button
+                (click)="addToPlaylist(match)"
+                [disabled]="isInPlaylist(match.id)"
+                [ngClass]="{'bg-gray-300 cursor-not-allowed': isInPlaylist(match.id), 'bg-indigo-600 hover:bg-indigo-700': !isInPlaylist(match.id)}"
+                class="text-white px-3 py-1 rounded-lg text-sm font-medium transition duration-150">
+                {{ isInPlaylist(match.id) ? 'In Playlist' : 'Add to Playlist' }}
+              </button>
+              <a [href]="match.streamURL" target="_blank" class="bg-red-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-red-700 transition duration-150">
+                Watch Now
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recently Added -->
+    <section class="mb-10">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">Recently Added</h2>
+        <a routerLink="/matches" class="text-indigo-600 hover:text-indigo-800">See all</a>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div *ngFor="let match of recentMatches" class="bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition duration-200">
+          <div class="relative">
+            <div class="bg-gray-200 aspect-video"></div>
+            <span *ngIf="match.status === 'Live'" class="absolute top-3 right-3 bg-red-600 text-white text-xs px-2 py-1 rounded-full flex items-center">
+              <span class="w-2 h-2 bg-white rounded-full mr-1 animate-pulse"></span>
+              LIVE
+            </span>
+            <span *ngIf="match.status === 'OnDemand'" class="absolute top-3 right-3 bg-green-600 text-white text-xs px-2 py-1 rounded-full">
+              REPLAY
+            </span>
+            <span *ngIf="match.status === 'Upcoming'" class="absolute top-3 right-3 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+              UPCOMING
+            </span>
+          </div>
+          <div class="p-3">
+            <h3 class="font-bold text-base mb-1 truncate">{{ match.title }}</h3>
+            <p class="text-gray-600 text-xs mb-2">{{ match.competition }}</p>
+            <p class="text-gray-500 text-xs">{{ formatMatchDate(match.date) }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Matches -->
+    <section class="mb-10">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">Featured Matches</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div *ngFor="let match of featuredMatches" class="bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition duration-200">
+          <div class="relative">
+            <div class="bg-gray-200 aspect-video"></div>
+            <span *ngIf="match.status === 'Live'" class="absolute top-3 right-3 bg-red-600 text-white text-xs px-2 py-1 rounded-full flex items-center">
+              <span class="w-2 h-2 bg-white rounded-full mr-1 animate-pulse"></span>
+              LIVE
+            </span>
+            <span *ngIf="match.status === 'OnDemand'" class="absolute top-3 right-3 bg-green-600 text-white text-xs px-2 py-1 rounded-full">
+              REPLAY
+            </span>
+            <span *ngIf="match.status === 'Upcoming'" class="absolute top-3 right-3 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+              UPCOMING
+            </span>
+          </div>
+          <div class="p-4">
+            <h3 class="font-bold text-lg mb-1">{{ match.title }}</h3>
+            <p class="text-gray-600 text-sm mb-2">{{ match.competition }}</p>
+            <p class="text-gray-500 text-xs mb-3">{{ formatMatchDate(match.date) }}</p>
+
+            <div class="flex justify-between items-center mt-4">
+              <button
+                (click)="addToPlaylist(match)"
+                [disabled]="isInPlaylist(match.id)"
+                [ngClass]="{'bg-gray-300 cursor-not-allowed': isInPlaylist(match.id), 'bg-indigo-600 hover:bg-indigo-700': !isInPlaylist(match.id)}"
+                class="text-white px-3 py-1 rounded-lg text-sm font-medium transition duration-150">
+                {{ isInPlaylist(match.id) ? 'In Playlist' : 'Add to Playlist' }}
+              </button>
+
+              <a *ngIf="match.status !== 'Upcoming'" [href]="match.streamURL" target="_blank"
+                class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-indigo-700 transition duration-150">
+                {{ match.status === 'Live' ? 'Watch Live' : 'Watch Replay' }}
+              </a>
+              <span *ngIf="match.status === 'Upcoming'" class="text-gray-600 text-sm">
+                Coming Soon
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
