@@ -69,11 +69,11 @@ export class MatchAdapter {
    */
   private static mapStatus(status: string): MatchStatus {
     switch (status) {
-      case 'NotStarted': return MatchStatus.NotStarted;
-      case 'InProgress': return MatchStatus.InProgress;
-      case 'Completed': return MatchStatus.Completed;
-      case 'Cancelled': return MatchStatus.Cancelled;
-      default: return MatchStatus.NotStarted; // Default value as fallback
+      case 'Upcoming': return MatchStatus.Upcoming;
+      case 'Live': return MatchStatus.Live;
+      case 'OnDemand': return MatchStatus.OnDemand;
+      case 'Canceled': return MatchStatus.Canceled;
+      default: return MatchStatus.Upcoming; // Default value as fallback
     }
   }
 

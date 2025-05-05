@@ -9,12 +9,12 @@ export interface Match {
   streamURL: string;
 }
 
-// Match the backend enums
+// Match the backend enums (Renamed from backend MatchStatus: Upcoming, Live, OnDemand, Canceled)
 export enum MatchStatus {
-  NotStarted = 'NotStarted',
-  InProgress = 'InProgress',
-  Completed = 'Completed',
-  Cancelled = 'Cancelled'
+  Upcoming = 'Upcoming',
+  Live = 'Live',
+  OnDemand = 'OnDemand',
+  Canceled = 'Canceled'
 }
 
 export enum MatchAvailability {
@@ -26,12 +26,12 @@ export enum MatchAvailability {
 export class MatchUIHelper {
   // Check if a match is live based on its status
   static isLive(match: Match): boolean {
-    return match.status === MatchStatus.InProgress;
+    return match.status === MatchStatus.Live;
   }
 
   // Check if a match is available for replay
   static isReplay(match: Match): boolean {
-    return match.status === MatchStatus.Completed;
+    return match.status === MatchStatus.OnDemand;
   }
 
   // Get match location from title (assuming format "Team1 vs Team2" with venue info in components)

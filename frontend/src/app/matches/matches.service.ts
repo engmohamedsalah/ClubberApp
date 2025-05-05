@@ -3,7 +3,7 @@ import { HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable, of, timer } from 'rxjs';
 import { catchError, switchMap, tap, map, retry } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { Match, MatchStatus, MatchAvailability, MatchUIHelper } from '../models/match.model';
+import { Match, MatchStatus, MatchAvailability } from '../models/match.model';
 import { PaginatedResult } from '../models/pagination.model';
 import { ApiService } from '../core/services/api.service';
 import { LoggingService } from '../core/services/logging.service';
@@ -15,7 +15,7 @@ import { PaginationAdapter, PaginatedResultDto } from '../core/adapters/paginati
   providedIn: 'root'
 })
 export class MatchesService {
-  private readonly ENDPOINT = 'Matches';
+  private readonly ENDPOINT: string;
 
   // State management
   private matchesSubject = new BehaviorSubject<Match[]>([]);
@@ -34,6 +34,9 @@ export class MatchesService {
     private loggingService: LoggingService,
     private featureFlagService: FeatureFlagService
   ) {
+    // Configure API endpoint from environment
+    this.ENDPOINT = `${environment.apiUrl}/Matches`;
+
     // Initialize PaginationAdapter with LoggingService
     PaginationAdapter.initialize(this.loggingService);
 
@@ -165,9 +168,9 @@ export class MatchesService {
     // Build params for the API request
     let params = new HttpParams();
     if (filter === 'Live') {
-      params = params.set('status', MatchStatus.InProgress);
+      params = params.set('status', MatchStatus.Live);
     } else if (filter === 'Replay') {
-      params = params.set('status', MatchStatus.Completed);
+      params = params.set('status', MatchStatus.OnDemand);
     }
 
     // Use the resilient ApiService with retry
@@ -214,9 +217,9 @@ export class MatchesService {
     }
 
     if (filter === 'Live') {
-      params = params.set('status', MatchStatus.InProgress);
+      params = params.set('status', MatchStatus.Live);
     } else if (filter === 'Replay') {
-      params = params.set('status', MatchStatus.Completed);
+      params = params.set('status', MatchStatus.OnDemand);
     }
 
     // Use the resilient ApiService with retry
@@ -231,13 +234,9 @@ export class MatchesService {
   private applyFilter(matches: Match[], filter?: 'Live' | 'Replay' | null): Match[] {
     if (!filter) return matches;
 
-    return matches.filter(match => {
-      if (filter === 'Live') {
-        return MatchUIHelper.isLive(match);
-      } else { // 'Replay'
-        return MatchUIHelper.isReplay(match);
-      }
-    });
+    return filter === 'Live'
+      ? matches.filter(m => m.status === MatchStatus.Live)
+      : matches.filter(m => m.status === MatchStatus.OnDemand);
   }
 
   // Handle API errors
@@ -282,7 +281,7 @@ export class MatchesService {
         title: 'Dublin vs Kerry',
         competition: 'Football Championship',
         date: new Date(),
-        status: MatchStatus.InProgress,
+        status: MatchStatus.Live,
         availability: MatchAvailability.Available,
         streamURL: 'https://example.com/stream/1'
       },
@@ -291,7 +290,7 @@ export class MatchesService {
         title: 'Cork vs Tipperary',
         competition: 'Hurling Championship',
         date: new Date(Date.now() - 86400000), // Yesterday
-        status: MatchStatus.Completed,
+        status: MatchStatus.OnDemand,
         availability: MatchAvailability.Available,
         streamURL: 'https://example.com/stream/2'
       },
@@ -300,7 +299,7 @@ export class MatchesService {
         title: 'Mayo vs Galway',
         competition: 'Football Championship',
         date: new Date(Date.now() + 86400000), // Tomorrow
-        status: MatchStatus.NotStarted,
+        status: MatchStatus.Upcoming,
         availability: MatchAvailability.Available,
         streamURL: 'https://example.com/stream/3'
       },
@@ -309,7 +308,7 @@ export class MatchesService {
         title: 'Kilkenny vs Wexford',
         competition: 'Hurling Championship',
         date: new Date(),
-        status: MatchStatus.InProgress,
+        status: MatchStatus.Live,
         availability: MatchAvailability.Available,
         streamURL: 'https://example.com/stream/4'
       }

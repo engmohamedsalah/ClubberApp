@@ -47,7 +47,7 @@ export class ApiService {
    * Make a GET request to the API with resilient error handling
    */
   get<T>(endpoint: string, params?: HttpParams | Record<string, string | string[]>): Observable<T> {
-    return this.http.get(`${this.apiUrl}/${endpoint}`, {
+    return this.http.get(`${this.buildUrl(endpoint)}`, {
       params,
       responseType: 'text'  // Get the raw response as text
     }).pipe(
@@ -128,15 +128,17 @@ export class ApiService {
    * Build a complete URL for API requests
    */
   private buildUrl(endpoint: string): string {
-    // Remove leading slash from endpoint if present
-    const sanitizedEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+    // Check if endpoint already starts with the API URL to prevent double prefixing
+    if (endpoint.startsWith('http') || endpoint.startsWith('/')) {
+      return endpoint;
+    }
 
     // Ensure apiUrl doesn't end with a slash
     const baseUrl = this.apiUrl.endsWith('/')
       ? this.apiUrl.substring(0, this.apiUrl.length - 1)
       : this.apiUrl;
 
-    return `${baseUrl}/${sanitizedEndpoint}`;
+    return `${baseUrl}/${endpoint}`;
   }
 
   /**

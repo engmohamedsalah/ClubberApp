@@ -1,39 +1,69 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment'; // Create environment files later
-import { User } from '../models/user.model'; // Create this model later
+import { User } from '../models/user.model';
+import { environment } from '../../environments/environment';
 
-// Define interfaces for API request/response payloads
-interface AuthResponse {
-  token: string;
-  user: User; // Assuming the backend returns user info on login
+// Define interfaces matching backend DTOs
+interface AuthResponseDto {
+  succeeded: boolean;
+  message: string;
+  token?: string;
+  user?: User;
 }
 
-interface RegisterResponse {
-  success: boolean;
-  message: string;
-  userId?: string;
+// Login request DTO
+interface LoginDto {
+  username: string;
+  password: string;
+}
+
+// Register request DTO
+interface RegisterDto {
+  username: string;
+  password: string;
+  email?: string; // Not used by backend currently
 }
 
 @Injectable({
   providedIn: 'root' // Provide service at the root level
 })
 export class AuthService {
-  private apiUrl = `${environment.apiUrl}/api/Auth`; // Adjust API URL as needed
+  private apiUrl: string;
 
-  constructor(private http: HttpClient) { }
-
-  login(username: string, password: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { username, password });
+  constructor(private http: HttpClient) {
+    this.apiUrl = `${environment.apiUrl}/Auth`;
   }
 
-  register(username: string, email: string, password: string): Observable<RegisterResponse> {
-    // Assuming backend expects an object with these properties
-    return this.http.post<RegisterResponse>(`${this.apiUrl}/register`, { username, email, password });
+  login(username: string, password: string): Observable<AuthResponseDto> {
+    const loginDto: LoginDto = { username, password };
+    return this.http.post<AuthResponseDto>(`${this.apiUrl}/login`, loginDto);
   }
 
-  // Optional: Add method to store/retrieve token from localStorage/sessionStorage
-  // Optional: Add method to check token validity/expiration
+  register(username: string, email: string, password: string): Observable<AuthResponseDto> {
+    // Backend expects username and password
+    const registerDto: RegisterDto = { username, password, email };
+    return this.http.post<AuthResponseDto>(`${this.apiUrl}/register`, registerDto);
+  }
+
+  // Store token in localStorage
+  storeToken(token: string): void {
+    localStorage.setItem('auth_token', token);
+  }
+
+  // Get token from localStorage
+  getToken(): string | null {
+    return localStorage.getItem('auth_token');
+  }
+
+  // Remove token from localStorage
+  removeToken(): void {
+    localStorage.removeItem('auth_token');
+  }
+
+  // Check if user is logged in
+  isLoggedIn(): boolean {
+    return !!this.getToken();
+  }
 }
 

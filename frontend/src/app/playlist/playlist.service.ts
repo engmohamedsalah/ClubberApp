@@ -10,7 +10,7 @@ import { Playlist, PlaylistActionResult } from '../models/playlist.model';
   providedIn: 'root'
 })
 export class PlaylistService {
-  private apiUrl = `${environment.apiUrl}/api/Playlist`;
+  private apiUrl: string;
 
   // State management
   private playlistSubject = new BehaviorSubject<Match[]>([]);
@@ -25,6 +25,9 @@ export class PlaylistService {
   public notification$ = this.notificationSubject.asObservable();
 
   constructor(private http: HttpClient) {
+    // Configure API URL from environment
+    this.apiUrl = `${environment.apiUrl}/Playlist`;
+
     // Load playlist from local storage on init
     this.loadFromLocalStorage();
   }
@@ -172,7 +175,7 @@ export class PlaylistService {
       title: match.title || '',
       competition: match.competition || '',
       date: match.date || new Date(),
-      status: match.status || MatchStatus.NotStarted,
+      status: match.status || MatchStatus.Upcoming,
       availability: match.availability || MatchAvailability.Available,
       streamURL: match.streamURL || ''
     };

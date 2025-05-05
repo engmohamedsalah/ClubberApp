@@ -1,9 +1,10 @@
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi, withInterceptors } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
 import { routes } from './app.routes';
 import { CoreModule } from './core/core.module';
+import { authInterceptor } from './interceptors/auth.interceptor';
 
 /**
  * Simplified application configuration
@@ -11,7 +12,10 @@ import { CoreModule } from './core/core.module';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(
+      withInterceptorsFromDi(),
+      withInterceptors([authInterceptor])
+    ),
     importProvidersFrom(CoreModule, ReactiveFormsModule)
   ]
 };

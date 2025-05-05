@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-login',
@@ -18,7 +19,8 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private formBuilder: FormBuilder,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -43,19 +45,24 @@ export class LoginComponent implements OnInit {
     this.loading = true;
     const { username, password } = this.loginForm.value;
 
-    // Simulated login - replace with actual auth service call
-    setTimeout(() => {
-      if (username === 'admin' && password === 'password') {
-        // Successful login
-        console.log('Login successful');
-        localStorage.setItem('authUser', JSON.stringify({ username, role: 'user' }));
-        this.router.navigate(['/']);
-      } else {
-        // Failed login
-        this.errorMessage = 'Invalid username or password';
+    // Use AuthService to perform login
+    this.authService.login(username, password).subscribe({
+      next: (response) => {
+        if (response.succeeded && response.token) {
+          // Store token and navigate to home page
+          this.authService.storeToken(response.token);
+          this.router.navigate(['/']);
+        } else {
+          this.errorMessage = response.message || 'Login failed';
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Login error:', error);
+        this.errorMessage = error?.error?.message || 'Login failed. Please try again.';
+        this.loading = false;
       }
-      this.loading = false;
-    }, 1000);
+    });
   }
 }
 

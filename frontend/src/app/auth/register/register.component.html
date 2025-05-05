@@ -34,8 +34,12 @@
         </div>
       </div>
 
-      <div *ngIf="errorMessage" class="mt-1 text-sm text-red-600">
+      <div *ngIf="errorMessage" class="mt-2 text-center text-red-600">
         {{ errorMessage }}
+      </div>
+
+      <div *ngIf="successMessage" class="mt-2 text-center text-green-600">
+        {{ successMessage }}
       </div>
 
       <div>
