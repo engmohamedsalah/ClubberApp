@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { Observable, filter, map } from 'rxjs';
 import { ReactiveFormsModule } from '@angular/forms';
+import { AuthService } from './auth/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -21,7 +22,8 @@ export class AppComponent implements OnInit {
   readonly darkModeClass = 'bg-gray-900 text-white';
 
   constructor(
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {
     // Track if we're on the home page (/ route)
     this.isHomePage$ = this.router.events.pipe(
@@ -29,8 +31,15 @@ export class AppComponent implements OnInit {
       map((event: NavigationEnd) => event.urlAfterRedirects === '/' || event.urlAfterRedirects === '')
     );
 
-    // Check if user is logged in (basic implementation)
+    // Check if user is logged in
     this.checkLoginStatus();
+
+    // Update login status on navigation
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.checkLoginStatus();
+    });
   }
 
   ngOnInit(): void {
@@ -50,6 +59,7 @@ export class AppComponent implements OnInit {
 
   // Logout user
   logout(): void {
+    this.authService.removeToken();
     localStorage.removeItem('authUser');
     this.isLoggedIn = false;
     this.router.navigate(['/']);
@@ -64,8 +74,9 @@ export class AppComponent implements OnInit {
 
   // Check if user is logged in
   private checkLoginStatus(): void {
+    const token = this.authService.getToken();
     const user = localStorage.getItem('authUser');
-    this.isLoggedIn = !!user;
+    this.isLoggedIn = !!token && !!user;
   }
 }
 

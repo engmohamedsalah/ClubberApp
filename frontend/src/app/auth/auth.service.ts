@@ -47,8 +47,10 @@ export class AuthService {
   }
 
   // Store token in localStorage
-  storeToken(token: string): void {
+  storeToken(token: string, username = 'User'): void {
     localStorage.setItem('auth_token', token);
+    // Also store authUser for compatibility with app component
+    localStorage.setItem('authUser', JSON.stringify({ username, role: 'user' }));
   }
 
   // Get token from localStorage

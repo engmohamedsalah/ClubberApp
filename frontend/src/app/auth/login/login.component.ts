@@ -50,7 +50,7 @@ export class LoginComponent implements OnInit {
       next: (response) => {
         if (response.succeeded && response.token) {
           // Store token and navigate to home page
-          this.authService.storeToken(response.token);
+          this.authService.storeToken(response.token, username);
           this.router.navigate(['/']);
         } else {
           this.errorMessage = response.message || 'Login failed';
