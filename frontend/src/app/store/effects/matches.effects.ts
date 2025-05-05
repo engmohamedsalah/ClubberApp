@@ -7,6 +7,10 @@ import { of } from "rxjs";
 
 @Injectable()
 export class MatchesEffects {
+  constructor(
+    private actions$: Actions,
+    private matchesService: MatchesService
+  ) {}
 
   loadMatches$ = createEffect(() =>
     this.actions$.pipe(
@@ -27,10 +31,5 @@ export class MatchesEffects {
       })
     )
   );
-
-  constructor(
-    private actions$: Actions,
-    private matchesService: MatchesService
-  ) {}
 }
 

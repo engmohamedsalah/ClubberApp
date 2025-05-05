@@ -10,13 +10,17 @@ export const routes: Routes = [
     loadChildren: () => import("./playlist/playlist.module").then(m => m.PlaylistModule)
   },
   {
-    path: "", // Default route redirects to matches
-    redirectTo: "matches",
-    pathMatch: "full"
+    path: "auth",
+    loadChildren: () => import("./auth/auth.module").then(m => m.AuthModule)
   },
   {
-    path: "**", // Wildcard route for 404
-    redirectTo: "matches"
+    path: "",
+    pathMatch: "full",
+    redirectTo: "" // This will use the app component's home content
+  },
+  {
+    path: "**",
+    redirectTo: ""
   }
 ];
 

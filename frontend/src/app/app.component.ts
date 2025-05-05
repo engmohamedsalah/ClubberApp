@@ -1,10 +1,7 @@
 import { Component, HostBinding, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
-import { Store } from '@ngrx/store';
 import { Observable, filter, map } from 'rxjs';
-import { selectIsAuthenticated } from './store/selectors/auth.selectors';
-import * as AuthActions from './store/actions/auth.actions';
 
 @Component({
   selector: 'app-root',
@@ -16,18 +13,15 @@ import * as AuthActions from './store/actions/auth.actions';
 export class AppComponent implements OnInit {
   readonly title = 'Clubber Sports';
   isMobileMenuOpen = false;
-  isLoggedIn$: Observable<boolean>;
+  isLoggedIn = false; // Simplified to a boolean property
   isHomePage$: Observable<boolean>;
 
   // Dark mode class
   readonly darkModeClass = 'bg-gray-900 text-white';
 
   constructor(
-    private router: Router,
-    private store: Store
+    private router: Router
   ) {
-    this.isLoggedIn$ = this.store.select(selectIsAuthenticated);
-
     // Track if we're on the home page (/ route)
     this.isHomePage$ = this.router.events.pipe(
       filter(event => event instanceof NavigationEnd),
@@ -52,7 +46,7 @@ export class AppComponent implements OnInit {
 
   // Logout user
   logout(): void {
-    this.store.dispatch(AuthActions.logout());
+    this.isLoggedIn = false;
     this.router.navigate(['/']);
   }
 
