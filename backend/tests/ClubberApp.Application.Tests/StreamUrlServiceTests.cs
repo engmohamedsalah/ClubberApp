@@ -25,7 +25,7 @@ public class StreamUrlServiceTests
     {
         var mockBaseUrl = "https://test-stream.example.com/";
         var mockLivePath = "live/";
-        var mockReplayPath = "replay/";
+        var mockReplayPath = "ondemand/";
 
         _mockConfiguration.Setup(c => c["StreamSettings:BaseUrl"])
             .Returns(mockBaseUrl);
@@ -77,7 +77,7 @@ public class StreamUrlServiceTests
     }
 
     [Fact]
-    public void GenerateStreamUrl_WithMatchObject_ShouldGenerateCorrectUrlForReplayMatch()
+    public void GenerateStreamUrl_WithMatchObject_ShouldGenerateCorrectUrlForOnDemandMatch()
     {
         // Arrange
         var matchId = Guid.NewGuid();
@@ -85,10 +85,10 @@ public class StreamUrlServiceTests
         { 
             Id = matchId, 
             Title = "Test Match", 
-            Status = MatchStatus.Replay,
+            Status = MatchStatus.OnDemand,
             Availability = MatchAvailability.Available
         };
-        var expectedUrl = $"https://test-stream.example.com/replay/{matchId}";
+        var expectedUrl = $"https://test-stream.example.com/ondemand/{matchId}";
 
         // Act
         var resultUrl = _streamUrlService.GenerateStreamUrl(match);

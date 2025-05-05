@@ -25,9 +25,21 @@ public class StreamUrlService : IStreamUrlService
     public string GenerateStreamUrl(Guid matchId, MatchStatus status)
     {
         var baseUrl = _configuration["StreamSettings:BaseUrl"];
-        var path = status == MatchStatus.Live 
-            ? _configuration["StreamSettings:LivePath"] 
-            : _configuration["StreamSettings:ReplayPath"];
+        string path;
+        
+        switch (status)
+        {
+            case MatchStatus.Live:
+                path = _configuration["StreamSettings:LivePath"];
+                break;
+            case MatchStatus.OnDemand:
+                path = _configuration["StreamSettings:ReplayPath"];
+                break;
+            case MatchStatus.Upcoming:
+            case MatchStatus.Canceled:
+            default:
+                return string.Empty; // No URLs for upcoming or canceled matches
+        }
 
         return $"{baseUrl}{path}{matchId}";
     }

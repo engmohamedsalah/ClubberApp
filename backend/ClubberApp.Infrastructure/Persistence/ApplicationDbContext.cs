@@ -53,7 +53,7 @@ public class ApplicationDbContext : DbContext
         var match3Id = Guid.Parse("755F9549-04D3-4FC9-A543-97EECE49CF70");
         modelBuilder.Entity<Match>().HasData(
             new Match { Id = match1Id, Title = "Team A vs Team B", Competition = "League 1", Date = new DateTime(2025, 5, 3, 16, 43, 41, DateTimeKind.Utc), Status = MatchStatus.Live },
-            new Match { Id = match2Id, Title = "Team C vs Team D", Competition = "Cup Final", Date = new DateTime(2025, 5, 1, 16, 43, 41, DateTimeKind.Utc), Status = MatchStatus.Replay },
+            new Match { Id = match2Id, Title = "Team C vs Team D", Competition = "Cup Final", Date = new DateTime(2025, 5, 1, 16, 43, 41, DateTimeKind.Utc), Status = MatchStatus.OnDemand },
             new Match { Id = match3Id, Title = "Team E vs Team F", Competition = "League 1", Date = new DateTime(2025, 5, 4, 16, 43, 41, DateTimeKind.Utc), Status = MatchStatus.Live }
         );
 

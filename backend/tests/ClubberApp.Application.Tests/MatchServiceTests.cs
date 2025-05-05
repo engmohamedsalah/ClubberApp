@@ -43,13 +43,13 @@ public class MatchServiceTests
         var matchId2 = Guid.NewGuid();
         var matches = new List<DomainMatch> // Use alias
         {
-            new DomainMatch { Id = matchId1, Title = "Match 1", Competition = "Comp A", Status = Domain.Entities.MatchStatus.Replay, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" },
+            new DomainMatch { Id = matchId1, Title = "Match 1", Competition = "Comp A", Status = Domain.Entities.MatchStatus.OnDemand, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" },
             new DomainMatch { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = Domain.Entities.MatchStatus.Live, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" }
         };
         var matchDtos = new List<MatchDto>
         {
-            new MatchDto { Id = matchId1, Title = "Match 1", Competition = "Comp A", Status = Enums.MatchStatus.Completed, Availability = Enums.MatchAvailability.Available, StreamURL = "" },
-            new MatchDto { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = Enums.MatchStatus.InProgress, Availability = Enums.MatchAvailability.Available, StreamURL = "" }
+            new MatchDto { Id = matchId1, Title = "Match 1", Competition = "Comp A", Status = Enums.MatchStatus.OnDemand, Availability = Enums.MatchAvailability.Available, StreamURL = "" },
+            new MatchDto { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = Enums.MatchStatus.Live, Availability = Enums.MatchAvailability.Available, StreamURL = "" }
         };
 
         _mockMatchRepository.Setup(repo => repo.SearchMatchesAsync(It.IsAny<MatchSearchParameters>()))
@@ -81,19 +81,19 @@ public class MatchServiceTests
         var matchId2 = Guid.NewGuid();
         var matchId3 = Guid.NewGuid();
         var domainStatusToFetch = Domain.Entities.MatchStatus.Live;
-        var dtoStatusToFetch = Enums.MatchStatus.InProgress;
+        var dtoStatusToFetch = Enums.MatchStatus.Live;
 
         var allMatches = new List<DomainMatch>
         {
-            new DomainMatch { Id = matchId1, Title = "Match 1", Competition = "Comp A", Status = Domain.Entities.MatchStatus.Replay, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" },
+            new DomainMatch { Id = matchId1, Title = "Match 1", Competition = "Comp A", Status = Domain.Entities.MatchStatus.OnDemand, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" },
             new DomainMatch { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = Domain.Entities.MatchStatus.Live, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" },
             new DomainMatch { Id = matchId3, Title = "Match 3", Competition = "Comp C", Status = Domain.Entities.MatchStatus.Live, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" }
         };
         var liveMatches = allMatches.Where(m => m.Status == domainStatusToFetch).ToList();
         var liveMatchDtos = new List<MatchDto>
         {
-            new MatchDto { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = Enums.MatchStatus.InProgress, Availability = Enums.MatchAvailability.Available, StreamURL = "" },
-            new MatchDto { Id = matchId3, Title = "Match 3", Competition = "Comp C", Status = Enums.MatchStatus.InProgress, Availability = Enums.MatchAvailability.Available, StreamURL = "" }
+            new MatchDto { Id = matchId2, Title = "Match 2", Competition = "Comp B", Status = Enums.MatchStatus.Live, Availability = Enums.MatchAvailability.Available, StreamURL = "" },
+            new MatchDto { Id = matchId3, Title = "Match 3", Competition = "Comp C", Status = Enums.MatchStatus.Live, Availability = Enums.MatchAvailability.Available, StreamURL = "" }
         };
 
         // Set up mapper to convert between domain and DTO enums
@@ -127,9 +127,9 @@ public class MatchServiceTests
     {
         // Arrange
         var matchId = Guid.NewGuid(); // Use Guid
-        var match = new DomainMatch { Id = matchId, Title = "Match 1", Competition = "Comp A", Status = Domain.Entities.MatchStatus.Replay, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" }; // Use alias and correct properties
-        var matchDto = new MatchDto { Id = matchId, Title = "Match 1", Competition = "Comp A", Status = Enums.MatchStatus.Completed, Availability = Enums.MatchAvailability.Available, StreamURL = "" };
-        var generatedStreamUrl = $"https://stream.example.com/replay/{matchId}";
+        var match = new DomainMatch { Id = matchId, Title = "Match 1", Competition = "Comp A", Status = Domain.Entities.MatchStatus.OnDemand, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" }; // Use alias and correct properties
+        var matchDto = new MatchDto { Id = matchId, Title = "Match 1", Competition = "Comp A", Status = Enums.MatchStatus.OnDemand, Availability = Enums.MatchAvailability.Available, StreamURL = "" };
+        var generatedStreamUrl = $"https://stream.example.com/ondemand/{matchId}";
 
         _mockMatchRepository.Setup(repo => repo.GetByIdAsync(matchId)).ReturnsAsync(match);
         _mockMapper.Setup(m => m.Map<MatchDto>(match)).Returns(matchDto);
@@ -173,7 +173,7 @@ public class MatchServiceTests
             Title = "New Match", 
             Competition = "Football", 
             Date = DateTime.Now.AddDays(1), 
-            Status = Enums.MatchStatus.InProgress,
+            Status = Enums.MatchStatus.Live,
             Availability = Enums.MatchAvailability.Available,
             StreamURL = "" 
         };
@@ -217,7 +217,7 @@ public class MatchServiceTests
             Title = "Updated Match", 
             Competition = "Basketball", 
             Date = DateTime.Now.AddDays(2), 
-            Status = Enums.MatchStatus.Completed,
+            Status = Enums.MatchStatus.OnDemand,
             Availability = Enums.MatchAvailability.Available,
             StreamURL = "" 
         };
@@ -230,7 +230,7 @@ public class MatchServiceTests
             Availability = Domain.Entities.MatchAvailability.Available,
             StreamURL = "" 
         };
-        var generatedStreamUrl = $"https://stream.example.com/replay/{matchId}";
+        var generatedStreamUrl = $"https://stream.example.com/ondemand/{matchId}";
 
         _mockMatchRepository.Setup(r => r.GetByIdAsync(matchId)).ReturnsAsync(existingMatch);
         _mockStreamUrlService.Setup(s => s.GenerateStreamUrl(It.IsAny<DomainMatch>())).Returns(generatedStreamUrl);
@@ -262,14 +262,14 @@ public class MatchServiceTests
 
         var filteredMatches = new List<DomainMatch>
         {
-            new DomainMatch { Id = matchId1, Title = "Football Match 1", Competition = "Football League", Status = Domain.Entities.MatchStatus.Replay, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" },
+            new DomainMatch { Id = matchId1, Title = "Football Match 1", Competition = "Football League", Status = Domain.Entities.MatchStatus.OnDemand, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" },
             new DomainMatch { Id = matchId2, Title = "Football Match 2", Competition = "Football Cup", Status = Domain.Entities.MatchStatus.Live, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" }
         };
         
         var filteredMatchDtos = new List<MatchDto>
         {
-            new MatchDto { Id = matchId1, Title = "Football Match 1", Competition = "Football League", Status = Enums.MatchStatus.Completed, Availability = Enums.MatchAvailability.Available, StreamURL = "" },
-            new MatchDto { Id = matchId2, Title = "Football Match 2", Competition = "Football Cup", Status = Enums.MatchStatus.InProgress, Availability = Enums.MatchAvailability.Available, StreamURL = "" }
+            new MatchDto { Id = matchId1, Title = "Football Match 1", Competition = "Football League", Status = Enums.MatchStatus.OnDemand, Availability = Enums.MatchAvailability.Available, StreamURL = "" },
+            new MatchDto { Id = matchId2, Title = "Football Match 2", Competition = "Football Cup", Status = Enums.MatchStatus.Live, Availability = Enums.MatchAvailability.Available, StreamURL = "" }
         };
 
         // Mock the repository's SearchMatchesAsync method
@@ -314,14 +314,14 @@ public class MatchServiceTests
 
         var pagedMatches = new List<DomainMatch>
         {
-            new DomainMatch { Id = matchId1, Title = "Football Match 1", Competition = "Football League", Status = Domain.Entities.MatchStatus.Replay, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" },
+            new DomainMatch { Id = matchId1, Title = "Football Match 1", Competition = "Football League", Status = Domain.Entities.MatchStatus.OnDemand, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" },
             new DomainMatch { Id = matchId2, Title = "Football Match 2", Competition = "Football Cup", Status = Domain.Entities.MatchStatus.Live, Availability = Domain.Entities.MatchAvailability.Available, StreamURL = "" }
         };
         
         var pagedMatchDtos = new List<MatchDto>
         {
-            new MatchDto { Id = matchId1, Title = "Football Match 1", Competition = "Football League", Status = Enums.MatchStatus.Completed, Availability = Enums.MatchAvailability.Available, StreamURL = "" },
-            new MatchDto { Id = matchId2, Title = "Football Match 2", Competition = "Football Cup", Status = Enums.MatchStatus.InProgress, Availability = Enums.MatchAvailability.Available, StreamURL = "" }
+            new MatchDto { Id = matchId1, Title = "Football Match 1", Competition = "Football League", Status = Enums.MatchStatus.OnDemand, Availability = Enums.MatchAvailability.Available, StreamURL = "" },
+            new MatchDto { Id = matchId2, Title = "Football Match 2", Competition = "Football Cup", Status = Enums.MatchStatus.Live, Availability = Enums.MatchAvailability.Available, StreamURL = "" }
         };
 
         // Mock the repository's SearchMatchesAsync method

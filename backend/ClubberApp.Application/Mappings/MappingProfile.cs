@@ -42,9 +42,11 @@ public class MappingProfile : Profile
     {
         return status switch
         {
-            Domain.Entities.MatchStatus.Live => Enums.MatchStatus.InProgress,
-            Domain.Entities.MatchStatus.Replay => Enums.MatchStatus.Completed,
-            _ => Enums.MatchStatus.NotStarted
+            Domain.Entities.MatchStatus.Live => Enums.MatchStatus.Live,
+            Domain.Entities.MatchStatus.OnDemand => Enums.MatchStatus.OnDemand,
+            Domain.Entities.MatchStatus.Canceled => Enums.MatchStatus.Canceled,
+            Domain.Entities.MatchStatus.Upcoming => Enums.MatchStatus.Upcoming,
+            _ => Enums.MatchStatus.Upcoming
         };
     }
     
@@ -52,10 +54,11 @@ public class MappingProfile : Profile
     {
         return status switch
         {
-            Enums.MatchStatus.InProgress => Domain.Entities.MatchStatus.Live,
-            Enums.MatchStatus.Completed => Domain.Entities.MatchStatus.Replay,
-            Enums.MatchStatus.NotStarted => Domain.Entities.MatchStatus.Replay, // Maps to Replay to allow access to not started matches
-            _ => Domain.Entities.MatchStatus.Replay // Default case
+            Enums.MatchStatus.Live => Domain.Entities.MatchStatus.Live,
+            Enums.MatchStatus.OnDemand => Domain.Entities.MatchStatus.OnDemand,
+            Enums.MatchStatus.Canceled => Domain.Entities.MatchStatus.Canceled,
+            Enums.MatchStatus.Upcoming => Domain.Entities.MatchStatus.Upcoming,
+            _ => Domain.Entities.MatchStatus.Upcoming // Default case
         };
     }
     

@@ -46,8 +46,8 @@ public class PlaylistServiceTests
                        Competition = m.Competition, 
                        Date = m.Date, 
                        Status = m.Status == Domain.Entities.MatchStatus.Live ? 
-                           Application.Enums.MatchStatus.InProgress : 
-                           Application.Enums.MatchStatus.Completed,
+                           Application.Enums.MatchStatus.Live : 
+                           Application.Enums.MatchStatus.OnDemand,
                        Availability = Application.Enums.MatchAvailability.Available
                    }).ToList());
                    
@@ -58,8 +58,8 @@ public class PlaylistServiceTests
                        Competition = m.Competition, 
                        Date = m.Date, 
                        Status = m.Status == Domain.Entities.MatchStatus.Live ? 
-                           Application.Enums.MatchStatus.InProgress : 
-                           Application.Enums.MatchStatus.Completed,
+                           Application.Enums.MatchStatus.Live : 
+                           Application.Enums.MatchStatus.OnDemand,
                        Availability = Application.Enums.MatchAvailability.Available
                    }).ToList());
     }
@@ -72,7 +72,7 @@ public class PlaylistServiceTests
         var matches = new List<DomainMatch> // Use alias
         {
             new DomainMatch { Id = Guid.NewGuid(), Title = "Match 1", Competition = "Comp A", Date = DateTime.UtcNow, Status = Domain.Entities.MatchStatus.Live },
-            new DomainMatch { Id = Guid.NewGuid(), Title = "Match 2", Competition = "Comp B", Date = DateTime.UtcNow.AddDays(1), Status = Domain.Entities.MatchStatus.Replay }
+            new DomainMatch { Id = Guid.NewGuid(), Title = "Match 2", Competition = "Comp B", Date = DateTime.UtcNow.AddDays(1), Status = Domain.Entities.MatchStatus.OnDemand }
         };
         
         _mockPlaylistRepository.Setup(repo => repo.GetMatchesByUserIdAsync(userId)).ReturnsAsync(matches);

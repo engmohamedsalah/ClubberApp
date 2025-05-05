@@ -12,7 +12,7 @@ public class MatchDto
     public DateTime Date { get; set; }
     
     // Using enums from the Enums folder
-    public MatchStatus Status { get; set; } = MatchStatus.NotStarted;
+    public MatchStatus Status { get; set; } = MatchStatus.Upcoming;
     public MatchAvailability Availability { get; set; } = MatchAvailability.Available;
     
     public string StreamURL { get; set; } = string.Empty;
@@ -24,8 +24,8 @@ public class MatchDto
     
     // Computed properties for the frontend
     [JsonIgnore]
-    public bool IsLive => Status == MatchStatus.InProgress;
+    public bool IsLive => Status == MatchStatus.Live;
     
     [JsonIgnore]
-    public bool IsReplay => Status == MatchStatus.Completed;
+    public bool IsReplay => Status == MatchStatus.OnDemand;
 } 

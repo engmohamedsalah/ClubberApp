@@ -73,7 +73,7 @@ public class MatchesController : ControllerBase
     [HttpGet("live")]
     public async Task<IActionResult> GetLiveMatches([FromQuery] string? sortBy = "date", [FromQuery] bool sortDescending = false)
     {
-        var paginated = await _matchService.SearchMatchesPaginatedAsync(null, MatchStatus.InProgress, 1, 100, sortBy, sortDescending);
+        var paginated = await _matchService.SearchMatchesPaginatedAsync(null, MatchStatus.Live, 1, 100, sortBy, sortDescending);
         return Ok(paginated.Data); // Return just the list for compatibility with tests
     }
 

@@ -2,8 +2,10 @@ namespace ClubberApp.Domain.Entities;
 
 public enum MatchStatus
 {
+    Upcoming,
     Live,
-    Replay
+    OnDemand,
+    Canceled
 }
 
 public enum MatchAvailability

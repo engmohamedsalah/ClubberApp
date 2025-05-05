@@ -5,8 +5,8 @@ namespace ClubberApp.Application.Enums;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum MatchStatus
 {
-    NotStarted,
-    InProgress,
-    Completed,
-    Cancelled
+    Upcoming,
+    Live,
+    OnDemand,
+    Canceled
 } 
