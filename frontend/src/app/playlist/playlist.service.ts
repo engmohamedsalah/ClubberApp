@@ -5,6 +5,8 @@ import { catchError, tap, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Match, MatchStatus, MatchAvailability } from '../models/match.model';
 import { Playlist, PlaylistActionResult } from '../models/playlist.model';
+import { ApiResponse, isApiResponse } from '../models/api-response.model';
+import { LoggingService } from '../core/services/logging.service';
 
 @Injectable({
   providedIn: 'root'
@@ -24,7 +26,7 @@ export class PlaylistService {
   public error$ = this.errorSubject.asObservable();
   public notification$ = this.notificationSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private loggingService: LoggingService) {
     // Configure API URL from environment
     this.apiUrl = `${environment.apiUrl}/Playlist`;
 
@@ -44,17 +46,46 @@ export class PlaylistService {
     }
 
     // In production, use API
-    this.http.get<Playlist>(this.apiUrl).pipe(
-      map(playlist => {
-        // Ensure playlist and matches exist
-        if (!playlist || !playlist.matches) {
-          return { matches: [] };
+    this.http.get<ApiResponse<Playlist> | Playlist>(this.apiUrl).pipe(
+      tap(response => {
+        // Log the response for debugging
+        this.loggingService.logInfo('Playlist API response', {
+          type: typeof response,
+          isApiResponse: isApiResponse(response),
+          structure: response ? JSON.stringify(response).substring(0, 100) + '...' : 'null/undefined'
+        });
+
+        if (!response) {
+          this.loggingService.logWarning('Empty response from playlist API');
         }
-        // Ensure all matches adhere to backend model structure
-        return {
-          ...playlist,
-          matches: playlist.matches.map(this.ensureMatchFormat)
-        };
+      }),
+      map(response => {
+        try {
+          // Handle ApiResponse wrapper
+          if (isApiResponse<Playlist>(response)) {
+            const playlist = response.data;
+            if (!playlist || !playlist.matches) {
+              return { matches: [] };
+            }
+            return {
+              ...playlist,
+              matches: playlist.matches.map(this.ensureMatchFormat)
+            };
+          }
+
+          // Handle direct playlist object
+          const playlist = response as Playlist;
+          if (!playlist || !playlist.matches) {
+            return { matches: [] };
+          }
+          return {
+            ...playlist,
+            matches: playlist.matches.map(this.ensureMatchFormat)
+          };
+        } catch (error) {
+          this.loggingService.logError('Error processing playlist response', { error, response });
+          return { matches: [] }; // Return empty playlist on error
+        }
       }),
       tap(playlist => {
         this.playlistSubject.next(playlist.matches);
@@ -87,21 +118,58 @@ export class PlaylistService {
 
     // In production, use API
     this.loadingSubject.next(true);
-    this.http.post<PlaylistActionResult>(`${this.apiUrl}/${formattedMatch.id}`, {}).pipe(
-      map(result => {
-        if (result.playlist && result.playlist.matches) {
+    this.http.post<ApiResponse<PlaylistActionResult> | PlaylistActionResult>(`${this.apiUrl}/${formattedMatch.id}`, {}).pipe(
+      tap(response => {
+        // Log the response for debugging
+        this.loggingService.logInfo('Add to playlist response', {
+          type: typeof response,
+          isApiResponse: isApiResponse(response),
+          structure: response ? JSON.stringify(response).substring(0, 100) + '...' : 'null/undefined'
+        });
+      }),
+      map(response => {
+        try {
+          // Handle ApiResponse wrapper
+          if (isApiResponse<PlaylistActionResult>(response)) {
+            const result = response.data;
+            if (!result) {
+              return { succeeded: false, message: 'Empty response', playlist: null };
+            }
+
+            if (result.playlist && result.playlist.matches) {
+              return {
+                ...result,
+                playlist: {
+                  ...result.playlist,
+                  matches: result.playlist.matches.map(this.ensureMatchFormat)
+                }
+              };
+            }
+            return {
+              ...result,
+              playlist: { matches: [] }
+            };
+          }
+
+          // Handle direct result object
+          const result = response as PlaylistActionResult;
+          if (result.playlist && result.playlist.matches) {
+            return {
+              ...result,
+              playlist: {
+                ...result.playlist,
+                matches: result.playlist.matches.map(this.ensureMatchFormat)
+              }
+            };
+          }
           return {
             ...result,
-            playlist: {
-              ...result.playlist,
-              matches: result.playlist.matches.map(this.ensureMatchFormat)
-            }
+            playlist: { matches: [] }
           };
+        } catch (error) {
+          this.loggingService.logError('Error processing add to playlist response', { error, response });
+          return { succeeded: false, message: 'Error processing response', playlist: null };
         }
-        return {
-          ...result,
-          playlist: { matches: [] }
-        };
       }),
       tap(result => {
         if (result.succeeded) {
@@ -137,21 +205,58 @@ export class PlaylistService {
 
     // In production, use API
     this.loadingSubject.next(true);
-    this.http.delete<PlaylistActionResult>(`${this.apiUrl}/${matchId}`).pipe(
-      map(result => {
-        if (result.playlist && result.playlist.matches) {
+    this.http.delete<ApiResponse<PlaylistActionResult> | PlaylistActionResult>(`${this.apiUrl}/${matchId}`).pipe(
+      tap(response => {
+        // Log the response for debugging
+        this.loggingService.logInfo('Remove from playlist response', {
+          type: typeof response,
+          isApiResponse: isApiResponse(response),
+          structure: response ? JSON.stringify(response).substring(0, 100) + '...' : 'null/undefined'
+        });
+      }),
+      map(response => {
+        try {
+          // Handle ApiResponse wrapper
+          if (isApiResponse<PlaylistActionResult>(response)) {
+            const result = response.data;
+            if (!result) {
+              return { succeeded: false, message: 'Empty response', playlist: null };
+            }
+
+            if (result.playlist && result.playlist.matches) {
+              return {
+                ...result,
+                playlist: {
+                  ...result.playlist,
+                  matches: result.playlist.matches.map(this.ensureMatchFormat)
+                }
+              };
+            }
+            return {
+              ...result,
+              playlist: { matches: [] }
+            };
+          }
+
+          // Handle direct result object
+          const result = response as PlaylistActionResult;
+          if (result.playlist && result.playlist.matches) {
+            return {
+              ...result,
+              playlist: {
+                ...result.playlist,
+                matches: result.playlist.matches.map(this.ensureMatchFormat)
+              }
+            };
+          }
           return {
             ...result,
-            playlist: {
-              ...result.playlist,
-              matches: result.playlist.matches.map(this.ensureMatchFormat)
-            }
+            playlist: { matches: [] }
           };
+        } catch (error) {
+          this.loggingService.logError('Error processing remove from playlist response', { error, response });
+          return { succeeded: false, message: 'Error processing response', playlist: null };
         }
-        return {
-          ...result,
-          playlist: { matches: [] }
-        };
       }),
       tap(result => {
         if (result.succeeded) {
@@ -198,7 +303,7 @@ export class PlaylistService {
 
   // Error handling helper method
   private handleError(errorMessage: string, error: HttpErrorResponse | Error): Observable<PlaylistActionResult> {
-    console.error(`${errorMessage}:`, error);
+    this.loggingService.logError(errorMessage, error);
     this.errorSubject.next(`${errorMessage}. Please try again.`);
     this.loadingSubject.next(false);
     this.showNotification(errorMessage, 'error');

@@ -10,6 +10,15 @@ import { LoggingService } from '../core/services/logging.service';
 import { FeatureFlagService } from '../core/services/feature-flag.service';
 import { MatchAdapter, MatchDto } from '../core/adapters/match.adapter';
 import { PaginationAdapter, PaginatedResultDto } from '../core/adapters/pagination.adapter';
+import { ApiResponse, isApiResponse } from '../models/api-response.model';
+
+// Define types that match the backend response structure
+interface MatchesResponse {
+  matches?: MatchDto[];
+  data?: MatchDto[];
+  items?: MatchDto[];
+  results?: MatchDto[];
+}
 
 @Injectable({
   providedIn: 'root'
@@ -124,9 +133,39 @@ export class MatchesService {
         .set('page', '1')
         .set('pageSize', '20');
 
-      this.apiService.get<PaginatedResultDto<MatchDto>>(`${this.ENDPOINT}/search`, params)
+      this.apiService.get<ApiResponse<PaginatedResultDto<MatchDto>> | PaginatedResultDto<MatchDto>>(`${this.ENDPOINT}/search`, params)
         .pipe(
-          map(dto => PaginationAdapter.fromApi(dto, MatchAdapter.fromApi)),
+          tap(response => {
+            // Log the response for debugging
+            this.loggingService.logInfo('Search API response', {
+              type: typeof response,
+              isArray: Array.isArray(response),
+              isApiResponse: isApiResponse(response),
+              structure: response ? JSON.stringify(response).substring(0, 100) + '...' : 'null/undefined'
+            });
+          }),
+          map(response => {
+            try {
+              if (!response) {
+                return this.getEmptyPaginatedResult(); // Handle empty response
+              }
+
+              // Case 1: ApiResponse wrapper
+              if (isApiResponse<PaginatedResultDto<MatchDto>>(response)) {
+                const paginatedData = response.data;
+                if (!paginatedData) {
+                  return this.getEmptyPaginatedResult(); // Empty data
+                }
+                return PaginationAdapter.fromApi(paginatedData, MatchAdapter.fromApi);
+              }
+
+              // Case 2: Direct PaginatedResultDto
+              return PaginationAdapter.fromApi(response as PaginatedResultDto<MatchDto>, MatchAdapter.fromApi);
+            } catch (error) {
+              this.loggingService.logError('Error in search PaginationAdapter.fromApi', { error, response });
+              return this.getEmptyPaginatedResult();
+            }
+          }),
           tap((result: PaginatedResult<Match>) => {
             this.paginatedResultSubject.next(result);
             this.matchesSubject.next(result.data);
@@ -174,10 +213,88 @@ export class MatchesService {
     }
 
     // Use the resilient ApiService with retry
-    return this.apiService.get<MatchDto[]>(this.ENDPOINT, params)
+    return this.apiService.get<ApiResponse<MatchesResponse> | MatchesResponse | MatchDto[]>(this.ENDPOINT, params)
       .pipe(
         retry(2), // Try 3 times total (1 original + 2 retries)
-        map(dtos => MatchAdapter.fromApiList(dtos))
+        tap(response => {
+          // Log the response for debugging
+          this.loggingService.logInfo('Matches API response', {
+            type: typeof response,
+            isArray: Array.isArray(response),
+            isApiResponse: isApiResponse(response),
+            hasData: response && typeof response === 'object' && 'data' in response,
+            structure: response ? JSON.stringify(response).substring(0, 100) + '...' : 'null/undefined'
+          });
+
+          if (!response) {
+            this.loggingService.logWarning('Empty response from matches API');
+          }
+        }),
+        map(response => {
+          try {
+            if (!response) {
+              return []; // Handle empty response
+            }
+
+            // Case 1: Direct array of DTOs
+            if (Array.isArray(response)) {
+              return MatchAdapter.fromApiList(response);
+            }
+
+            // Case 2: ApiResponse wrapper with MatchesResponse data
+            if (isApiResponse<MatchesResponse>(response)) {
+              const matchesData = response.data;
+              if (!matchesData) {
+                return []; // Empty data in the response
+              }
+
+              // Try to find the array in the various properties
+              if (matchesData.matches && Array.isArray(matchesData.matches)) {
+                return MatchAdapter.fromApiList(matchesData.matches);
+              } else if (matchesData.data && Array.isArray(matchesData.data)) {
+                return MatchAdapter.fromApiList(matchesData.data);
+              } else if (matchesData.items && Array.isArray(matchesData.items)) {
+                return MatchAdapter.fromApiList(matchesData.items);
+              } else if (matchesData.results && Array.isArray(matchesData.results)) {
+                return MatchAdapter.fromApiList(matchesData.results);
+              }
+            }
+
+            // Case 3: Direct MatchesResponse object
+            const matchesResponse = response as MatchesResponse;
+            if (matchesResponse.matches && Array.isArray(matchesResponse.matches)) {
+              return MatchAdapter.fromApiList(matchesResponse.matches);
+            } else if (matchesResponse.data && Array.isArray(matchesResponse.data)) {
+              return MatchAdapter.fromApiList(matchesResponse.data);
+            } else if (matchesResponse.items && Array.isArray(matchesResponse.items)) {
+              return MatchAdapter.fromApiList(matchesResponse.items);
+            } else if (matchesResponse.results && Array.isArray(matchesResponse.results)) {
+              return MatchAdapter.fromApiList(matchesResponse.results);
+            }
+
+            // Case 4: Fallback - search for any array property
+            if (typeof response === 'object' && response !== null) {
+              for (const key in response) {
+                const value = (response as Record<string, unknown>)[key];
+                if (Array.isArray(value)) {
+                  this.loggingService.logInfo(`Found array property: ${key}, using it`);
+                  return MatchAdapter.fromApiList(value);
+                }
+              }
+            }
+
+            // If we reach here, we couldn't find a usable array
+            this.loggingService.logError('Could not extract matches array from response', { response });
+            return []; // Return empty array if we couldn't find matches
+          } catch (error) {
+            this.loggingService.logError('Error processing matches response', { error, response });
+            return []; // Return empty array on error
+          }
+        }),
+        catchError(error => {
+          this.loggingService.logError('Error fetching matches', error);
+          return of([]); // Return empty array on error
+        })
       );
   }
 
@@ -223,10 +340,48 @@ export class MatchesService {
     }
 
     // Use the resilient ApiService with retry
-    return this.apiService.get<PaginatedResultDto<MatchDto>>(this.ENDPOINT, params)
+    return this.apiService.get<ApiResponse<PaginatedResultDto<MatchDto>> | PaginatedResultDto<MatchDto>>(this.ENDPOINT, params)
       .pipe(
         retry(2), // Try 3 times total (1 original + 2 retries)
-        map(dto => PaginationAdapter.fromApi(dto, MatchAdapter.fromApi))
+        tap(response => {
+          // Log the response for debugging
+          this.loggingService.logInfo('Paginated Matches API response', {
+            type: typeof response,
+            isArray: Array.isArray(response),
+            isApiResponse: isApiResponse(response),
+            structure: response ? JSON.stringify(response).substring(0, 100) + '...' : 'null/undefined'
+          });
+
+          if (!response) {
+            this.loggingService.logWarning('Empty response from paginated matches API');
+          }
+        }),
+        map(response => {
+          try {
+            if (!response) {
+              return this.getEmptyPaginatedResult(); // Handle empty response
+            }
+
+            // Case 1: ApiResponse wrapper
+            if (isApiResponse<PaginatedResultDto<MatchDto>>(response)) {
+              const paginatedData = response.data;
+              if (!paginatedData) {
+                return this.getEmptyPaginatedResult(); // Empty data
+              }
+              return PaginationAdapter.fromApi(paginatedData, MatchAdapter.fromApi);
+            }
+
+            // Case 2: Direct PaginatedResultDto
+            return PaginationAdapter.fromApi(response as PaginatedResultDto<MatchDto>, MatchAdapter.fromApi);
+          } catch (error) {
+            this.loggingService.logError('Error processing paginated matches response', { error, response });
+            return this.getEmptyPaginatedResult(); // Return empty result on error
+          }
+        }),
+        catchError(error => {
+          this.loggingService.logError('Error fetching paginated matches', error);
+          return of(this.getEmptyPaginatedResult()); // Return empty result on error
+        })
       );
   }
 

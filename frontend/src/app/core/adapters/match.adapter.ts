@@ -15,6 +15,35 @@ export interface MatchDto {
 }
 
 /**
+ * Helper functions for mapping enums outside the class context
+ */
+export function mapMatchStatus(status: string | undefined | null): MatchStatus {
+  if (!status) {
+    return MatchStatus.Upcoming; // Default if status is undefined or null
+  }
+
+  switch (status) {
+    case 'Upcoming': return MatchStatus.Upcoming;
+    case 'Live': return MatchStatus.Live;
+    case 'OnDemand': return MatchStatus.OnDemand;
+    case 'Canceled': return MatchStatus.Canceled;
+    default: return MatchStatus.Upcoming; // Default value as fallback
+  }
+}
+
+export function mapMatchAvailability(availability: string | undefined | null): MatchAvailability {
+  if (!availability) {
+    return MatchAvailability.Unavailable; // Default if availability is undefined or null
+  }
+
+  switch (availability) {
+    case 'Available': return MatchAvailability.Available;
+    case 'Unavailable': return MatchAvailability.Unavailable;
+    default: return MatchAvailability.Unavailable; // Default value as fallback
+  }
+}
+
+/**
  * Adapter to convert between backend DTOs and frontend models
  * Ensures consistent data transformation and validation
  */
@@ -25,13 +54,28 @@ export class MatchAdapter {
    * @returns - A frontend Match model with properly formatted data
    */
   static fromApi(dto: MatchDto): Match {
+    if (!dto) {
+      console.error('Received undefined or null dto in MatchAdapter.fromApi');
+      // Return a default Match object with empty values
+      return {
+        id: '',
+        title: '',
+        competition: '',
+        date: new Date(),
+        status: MatchStatus.Upcoming,
+        availability: MatchAvailability.Unavailable,
+        streamURL: ''
+      };
+    }
+
+    // Use standalone functions instead of class methods to avoid 'this' context issues
     return {
-      id: dto.id,
-      title: dto.title,
-      competition: dto.competition,
-      date: new Date(dto.date), // Convert ISO string to Date object
-      status: this.mapStatus(dto.status),
-      availability: this.mapAvailability(dto.availability),
+      id: dto.id || '',
+      title: dto.title || '',
+      competition: dto.competition || '',
+      date: dto.date ? new Date(dto.date) : new Date(), // Convert ISO string to Date object
+      status: mapMatchStatus(dto.status),
+      availability: mapMatchAvailability(dto.availability),
       streamURL: dto.streamURL || ''
     };
   }
@@ -55,10 +99,27 @@ export class MatchAdapter {
 
   /**
    * Map a collection of DTOs to frontend models
-   * @param dtos - Array of DTOs from the backend
+   * @param dtos - Array of DTOs from the backend or potentially a single DTO
    * @returns - Array of frontend models
    */
-  static fromApiList(dtos: MatchDto[]): Match[] {
+  static fromApiList(dtos: MatchDto[] | MatchDto | unknown): Match[] {
+    // Handle non-array inputs
+    if (!dtos) {
+      console.error('Received undefined or null dtos in MatchAdapter.fromApiList');
+      return [];
+    }
+
+    // If dtos is not an array, wrap it in an array if it's an object, or return empty array
+    if (!Array.isArray(dtos)) {
+      console.error('Received non-array in MatchAdapter.fromApiList:', typeof dtos);
+      // If it's an object, it might be a single DTO
+      if (typeof dtos === 'object') {
+        return [this.fromApi(dtos as MatchDto)];
+      }
+      return [];
+    }
+
+    // Map each DTO to a Match model, with safe handling of each item
     return dtos.map(dto => this.fromApi(dto));
   }
 
@@ -68,13 +129,7 @@ export class MatchAdapter {
    * @returns - Corresponding enum value
    */
   private static mapStatus(status: string): MatchStatus {
-    switch (status) {
-      case 'Upcoming': return MatchStatus.Upcoming;
-      case 'Live': return MatchStatus.Live;
-      case 'OnDemand': return MatchStatus.OnDemand;
-      case 'Canceled': return MatchStatus.Canceled;
-      default: return MatchStatus.Upcoming; // Default value as fallback
-    }
+    return mapMatchStatus(status);
   }
 
   /**
@@ -83,10 +138,6 @@ export class MatchAdapter {
    * @returns - Corresponding enum value
    */
   private static mapAvailability(availability: string): MatchAvailability {
-    switch (availability) {
-      case 'Available': return MatchAvailability.Available;
-      case 'Unavailable': return MatchAvailability.Unavailable;
-      default: return MatchAvailability.Unavailable; // Default value as fallback
-    }
+    return mapMatchAvailability(availability);
   }
 }

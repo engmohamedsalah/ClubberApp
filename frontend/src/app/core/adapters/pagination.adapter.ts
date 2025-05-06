@@ -41,11 +41,29 @@ export class PaginationAdapter {
    */
   static fromApi<T, R>(dto: PaginatedResultDto<T> | T[], itemAdapter?: (item: T) => R): PaginatedResult<R> {
     try {
+      // Add additional logging for debugging
+      if (this.loggingService) {
+        this.loggingService.logInfo('PaginationAdapter input', {
+          isArray: Array.isArray(dto),
+          dtoType: dto ? typeof dto : 'undefined/null',
+          hasAdapter: !!itemAdapter
+        });
+      }
+
       // Handle case where API returns a direct array instead of a paginated object
       if (Array.isArray(dto)) {
         const items = dto as T[];
         const transformedItems = itemAdapter
-          ? items.map(item => itemAdapter(item))
+          ? items.map(item => {
+              try {
+                return itemAdapter(item);
+              } catch (error) {
+                if (this.loggingService) {
+                  this.loggingService.logError('Error in itemAdapter for array item', { error, item });
+                }
+                throw error; // Re-throw to be caught by the outer try/catch
+              }
+            })
           : items as unknown as R[];
 
         // Create a default pagination wrapper
@@ -60,10 +78,24 @@ export class PaginationAdapter {
       // Normalize the paginated object
       const paginatedDto = dto as PaginatedResultDto<T>;
 
+      // Check for null/undefined dto
+      if (!paginatedDto) {
+        if (this.loggingService) {
+          this.loggingService.logError('PaginationAdapter received null/undefined dto');
+        }
+        return {
+          data: [],
+          page: 1,
+          pageSize: 10,
+          totalCount: 0
+        };
+      }
+
       // Log the actual structure to help with debugging
       if (this.loggingService) {
         this.loggingService.logInfo('PaginationAdapter fromApi', {
-          properties: Object.keys(paginatedDto)
+          properties: Object.keys(paginatedDto),
+          dto: JSON.stringify(paginatedDto).substring(0, 200) + '...' // Log first 200 chars of DTO for debugging
         });
       }
 
@@ -90,7 +122,48 @@ export class PaginationAdapter {
 
       // Apply item adapter if provided
       const transformedItems = itemAdapter
-        ? items.map(item => itemAdapter(item))
+        ? items.map((item, index) => {
+            try {
+              if (!item) {
+                if (this.loggingService) {
+                  this.loggingService.logError('Null/undefined item in collection', {
+                    index,
+                    itemsLength: items.length
+                  });
+                }
+                // Create a default item based on empty values
+                // This is more robust than throwing an error
+                return {} as R;
+              }
+
+              // Call the adapter with proper error handling
+              try {
+                return itemAdapter(item);
+              } catch (adapterError) {
+                if (this.loggingService) {
+                  this.loggingService.logError('Error in itemAdapter for item', {
+                    error: adapterError,
+                    index,
+                    item: JSON.stringify(item).substring(0, 100)
+                  });
+                }
+
+                // Instead of re-throwing, return a default empty object
+                // This allows the rest of the items to process
+                return {} as R;
+              }
+            } catch (error) {
+              if (this.loggingService) {
+                this.loggingService.logError('General error processing collection item', {
+                  error,
+                  index,
+                  items: JSON.stringify(items.slice(Math.max(0, index-2), Math.min(items.length, index+3))).substring(0, 200)
+                });
+              }
+              // Return default object instead of throwing
+              return {} as R;
+            }
+          })
         : items as unknown as R[];
 
       // Get pagination properties with fallbacks
