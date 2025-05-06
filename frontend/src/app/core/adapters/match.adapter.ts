@@ -12,6 +12,8 @@ export interface MatchDto {
   status: string; // String enum from backend
   availability: string; // String enum from backend
   streamURL: string | null;
+  thumbnail?: string; // Added thumbnail property from backend DTO
+  location?: string; // Added location from backend DTO
 }
 
 /**
@@ -64,7 +66,9 @@ export class MatchAdapter {
         date: new Date(),
         status: MatchStatus.Upcoming,
         availability: MatchAvailability.Unavailable,
-        streamURL: ''
+        streamURL: '',
+        thumbnail: undefined, // Ensure thumbnail is part of the default return
+        location: undefined // Ensure location is part of the default return
       };
     }
 
@@ -76,7 +80,9 @@ export class MatchAdapter {
       date: dto.date ? new Date(dto.date) : new Date(), // Convert ISO string to Date object
       status: mapMatchStatus(dto.status),
       availability: mapMatchAvailability(dto.availability),
-      streamURL: dto.streamURL || ''
+      streamURL: dto.streamURL || '',
+      thumbnail: dto.thumbnail || undefined, // Map thumbnail
+      location: dto.location || undefined // Map location
     };
   }
 
@@ -93,7 +99,9 @@ export class MatchAdapter {
       date: model.date.toISOString(), // Convert Date to ISO string
       status: model.status, // Enum values match backend strings
       availability: model.availability,
-      streamURL: model.streamURL || null
+      streamURL: model.streamURL || null,
+      thumbnail: model.thumbnail || undefined, // Map thumbnail back to DTO
+      location: model.location || undefined // Map location back to DTO
     };
   }
 

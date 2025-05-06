@@ -76,8 +76,8 @@ export class MatchesListComponent implements OnInit, OnDestroy {
     return undefined;
   }
 
-  getThumbnail(): string | undefined {
-    return MatchUIHelper.getThumbnail();
+  getThumbnail(match: Match): string | undefined {
+    return MatchUIHelper.getThumbnail(match);
   }
 
   // Load paginated matches

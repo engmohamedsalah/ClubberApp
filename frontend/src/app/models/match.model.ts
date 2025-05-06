@@ -7,6 +7,8 @@ export interface Match {
   status: MatchStatus; // Using enum instead of string
   availability: MatchAvailability; // From backend DTO
   streamURL: string;
+  thumbnail?: string; // Added thumbnail property
+  location?: string; // Added location property
 }
 
 // Match the backend enums (Renamed from backend MatchStatus: Upcoming, Live, OnDemand, Canceled)
@@ -35,10 +37,9 @@ export class MatchUIHelper {
   }
 
   // Generate thumbnail URL based on match data if needed
-  static getThumbnail(/* match: Match */): string | undefined {
-    // In a real app, this might use team data or competition to generate a relevant image URL
-    // For now, return undefined since thumbnails would typically come from a media service
-    return undefined;
+  static getThumbnail(match: Match): string | undefined {
+    console.log('MatchUIHelper.getThumbnail called for:', match.title, 'Thumbnail URL:', match.thumbnail);
+    return match.thumbnail;
   }
 }
 

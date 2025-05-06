@@ -75,8 +75,8 @@
         <div *ngFor="let match of result.data" class="bg-gray-800 rounded-lg shadow-lg overflow-hidden transition-transform hover:scale-[1.02]">
           <!-- Match Image/Thumbnail -->
           <div class="relative h-48 bg-gray-700">
-            <img *ngIf="getThumbnail()" [src]="getThumbnail()" alt="{{ match.title }}" class="w-full h-full object-cover">
-            <div *ngIf="!getThumbnail()" class="w-full h-full flex items-center justify-center">
+            <img *ngIf="getThumbnail(match)" [src]="getThumbnail(match)" alt="{{ match.title }}" class="w-full h-full object-cover">
+            <div *ngIf="!getThumbnail(match)" class="w-full h-full flex items-center justify-center">
               <span class="text-gray-500">No image available</span>
             </div>
 
