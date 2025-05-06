@@ -46,6 +46,10 @@ export class PlaylistService {
     // In production, use API
     this.http.get<Playlist>(this.apiUrl).pipe(
       map(playlist => {
+        // Ensure playlist and matches exist
+        if (!playlist || !playlist.matches) {
+          return { matches: [] };
+        }
         // Ensure all matches adhere to backend model structure
         return {
           ...playlist,
@@ -85,7 +89,7 @@ export class PlaylistService {
     this.loadingSubject.next(true);
     this.http.post<PlaylistActionResult>(`${this.apiUrl}/${formattedMatch.id}`, {}).pipe(
       map(result => {
-        if (result.playlist) {
+        if (result.playlist && result.playlist.matches) {
           return {
             ...result,
             playlist: {
@@ -94,7 +98,10 @@ export class PlaylistService {
             }
           };
         }
-        return result;
+        return {
+          ...result,
+          playlist: { matches: [] }
+        };
       }),
       tap(result => {
         if (result.succeeded) {
@@ -132,7 +139,7 @@ export class PlaylistService {
     this.loadingSubject.next(true);
     this.http.delete<PlaylistActionResult>(`${this.apiUrl}/${matchId}`).pipe(
       map(result => {
-        if (result.playlist) {
+        if (result.playlist && result.playlist.matches) {
           return {
             ...result,
             playlist: {
@@ -141,7 +148,10 @@ export class PlaylistService {
             }
           };
         }
-        return result;
+        return {
+          ...result,
+          playlist: { matches: [] }
+        };
       }),
       tap(result => {
         if (result.succeeded) {
@@ -202,10 +212,20 @@ export class PlaylistService {
       if (savedPlaylist) {
         const matches = JSON.parse(savedPlaylist);
         // Ensure all matches loaded from storage follow backend model
-        this.playlistSubject.next(matches.map(this.ensureMatchFormat));
+        if (Array.isArray(matches)) {
+          this.playlistSubject.next(matches.map(this.ensureMatchFormat));
+        } else {
+          // Initialize with empty array if matches is not an array
+          this.playlistSubject.next([]);
+        }
+      } else {
+        // Initialize with empty array if no playlist in localStorage
+        this.playlistSubject.next([]);
       }
     } catch (error) {
       console.error('Error loading playlist from local storage:', error);
+      // Initialize with empty array on error
+      this.playlistSubject.next([]);
     }
   }
 
