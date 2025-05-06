@@ -78,7 +78,7 @@ export class MatchesService {
   loadPaginatedMatches(
     page = 1,
     pageSize = 10,
-    filter?: 'Live' | 'Replay' | null,
+    filter?: 'Live' | 'Replay' | 'Upcoming' | null,
     sortBy = 'date',
     sortDescending = true
   ): void {
@@ -302,7 +302,7 @@ export class MatchesService {
   private fetchPaginatedMatches(
     page = 1,
     pageSize = 10,
-    filter?: 'Live' | 'Replay' | null,
+    filter?: 'Live' | 'Replay' | 'Upcoming' | null,
     sortBy?: string,
     sortDescending?: boolean
   ): Observable<PaginatedResult<Match>> {
@@ -337,6 +337,8 @@ export class MatchesService {
       params = params.set('status', MatchStatus.Live);
     } else if (filter === 'Replay') {
       params = params.set('status', MatchStatus.OnDemand);
+    } else if (filter === 'Upcoming') {
+      params = params.set('status', MatchStatus.Upcoming);
     }
 
     // Use the resilient ApiService with retry
@@ -386,12 +388,17 @@ export class MatchesService {
   }
 
   // Helper method to apply filters
-  private applyFilter(matches: Match[], filter?: 'Live' | 'Replay' | null): Match[] {
+  private applyFilter(matches: Match[], filter?: 'Live' | 'Replay' | 'Upcoming' | null): Match[] {
     if (!filter) return matches;
 
-    return filter === 'Live'
-      ? matches.filter(m => m.status === MatchStatus.Live)
-      : matches.filter(m => m.status === MatchStatus.OnDemand);
+    if (filter === 'Live') {
+      return matches.filter(m => m.status === MatchStatus.Live);
+    } else if (filter === 'Replay') {
+      return matches.filter(m => m.status === MatchStatus.OnDemand);
+    } else if (filter === 'Upcoming') {
+      return matches.filter(m => m.status === MatchStatus.Upcoming);
+    }
+    return matches; // Should not happen if filter is one of the defined types
   }
 
   // Handle API errors

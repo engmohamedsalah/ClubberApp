@@ -22,7 +22,7 @@ export class MatchesListComponent implements OnInit, OnDestroy {
   error$: Observable<string | null>;
   notification$: Observable<{message: string, type: 'success' | 'error'} | null>;
 
-  currentFilter: 'All' | 'Live' | 'Replay' = 'All';
+  currentFilter: 'All' | 'Live' | 'Replay' | 'Upcoming' = 'All';
   searchQuery = '';
 
   // Pagination properties
@@ -86,19 +86,28 @@ export class MatchesListComponent implements OnInit, OnDestroy {
 
   // Load paginated matches
   loadPaginatedMatches(): void {
+    let filterParam: 'Live' | 'Replay' | 'Upcoming' | null = null;
+    if (this.currentFilter === 'Live') {
+      filterParam = 'Live';
+    } else if (this.currentFilter === 'Replay') {
+      filterParam = 'Replay';
+    } else if (this.currentFilter === 'Upcoming') {
+      filterParam = 'Upcoming';
+    }
+
     this.matchesService.loadPaginatedMatches(
       this.currentPage,
       this.pageSize,
-      this.currentFilter === 'All' ? null : this.currentFilter,
+      filterParam,
       this.sortBy,
       this.sortDescending
     );
   }
 
   // Filter matches by Live/Replay/All
-  filterMatches(filter: 'All' | 'Live' | 'Replay'): void {
+  filterMatches(filter: 'All' | 'Live' | 'Replay' | 'Upcoming'): void {
     this.currentFilter = filter;
-    this.currentPage = 1; // Reset to first page on filter change
+    this.currentPage = 1; // Reset to first page when filter changes
     this.loadPaginatedMatches();
   }
 

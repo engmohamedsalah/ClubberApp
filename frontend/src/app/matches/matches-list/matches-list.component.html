@@ -10,12 +10,6 @@
         <!-- Filter Tabs -->
         <div class="flex space-x-2 bg-indigo-950 p-1 rounded-lg">
           <button
-            (click)="filterMatches('All')"
-            [ngClass]="{'bg-lime-500 text-white': currentFilter === 'All', 'bg-transparent text-gray-300 hover:text-white': currentFilter !== 'All'}"
-            class="px-4 py-2 rounded-md transition-colors text-sm font-medium">
-            All Matches
-          </button>
-          <button
             (click)="filterMatches('Live')"
             [ngClass]="{'bg-lime-500 text-white': currentFilter === 'Live', 'bg-transparent text-gray-300 hover:text-white': currentFilter !== 'Live'}"
             class="px-4 py-2 rounded-md transition-colors text-sm font-medium">
@@ -26,6 +20,18 @@
             [ngClass]="{'bg-lime-500 text-white': currentFilter === 'Replay', 'bg-transparent text-gray-300 hover:text-white': currentFilter !== 'Replay'}"
             class="px-4 py-2 rounded-md transition-colors text-sm font-medium">
             Replays
+          </button>
+          <button
+            (click)="filterMatches('Upcoming')"
+            [ngClass]="{'bg-lime-500 text-white': currentFilter === 'Upcoming', 'bg-transparent text-gray-300 hover:text-white': currentFilter !== 'Upcoming'}"
+            class="px-4 py-2 rounded-md transition-colors text-sm font-medium">
+            Upcoming
+          </button>
+          <button
+            (click)="filterMatches('All')"
+            [ngClass]="{'bg-lime-500 text-white': currentFilter === 'All', 'bg-transparent text-gray-300 hover:text-white': currentFilter !== 'All'}"
+            class="px-4 py-2 rounded-md transition-colors text-sm font-medium">
+            All Matches
           </button>
         </div>
 
