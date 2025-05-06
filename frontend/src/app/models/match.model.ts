@@ -34,13 +34,6 @@ export class MatchUIHelper {
     return match.status === MatchStatus.OnDemand;
   }
 
-  // Get match location from title (assuming format "Team1 vs Team2" with venue info in components)
-  static getTeams(match: Match): string[] {
-    // Extract team names from title, assuming format "Team1 vs Team2"
-    const teamParts = match.title.split(' vs ');
-    return teamParts.length === 2 ? teamParts : [match.title];
-  }
-
   // Generate thumbnail URL based on match data if needed
   static getThumbnail(/* match: Match */): string | undefined {
     // In a real app, this might use team data or competition to generate a relevant image URL

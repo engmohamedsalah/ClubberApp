@@ -50,10 +50,6 @@ export class PlaylistViewComponent implements OnInit, OnDestroy {
     return MatchUIHelper.isReplay(match);
   }
 
-  getTeams(match: Match): string[] {
-    return MatchUIHelper.getTeams(match);
-  }
-
   getLocation(match: Match): string | undefined {
     // In a real app, this might come from a separate venue/location DB
     // For demo purposes, extract it from the competition field if present
@@ -100,7 +96,6 @@ export class PlaylistViewComponent implements OnInit, OnDestroy {
     modalDiv.id = 'stream-modal';
 
     const location = this.getLocation(match);
-    const teams = this.getTeams(match);
 
     // Modal content
     modalDiv.innerHTML = `
@@ -124,7 +119,6 @@ export class PlaylistViewComponent implements OnInit, OnDestroy {
         </div>
         <div class="p-4 text-gray-300">
           <p>Competition: ${match.competition}</p>
-          <p>Teams: ${teams.join(' vs ')}</p>
           ${location ? `<p>Location: ${location}</p>` : ''}
         </div>
       </div>
