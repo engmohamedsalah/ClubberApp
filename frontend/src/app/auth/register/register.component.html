@@ -6,7 +6,7 @@
         <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
         <input id="username" type="text" formControlName="username" required
                class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
-               [ngClass]="{ 'border-red-500': submitted && f['username'].errors }">
+               [ngClass]="{ 'border-red-500': submitted && f['username'].errors }" autocomplete="username">
         <div *ngIf="submitted && f['username'].errors" class="mt-1 text-sm text-red-600">
           <div *ngIf="f['username'].errors['required']">Username is required</div>
         </div>
@@ -16,7 +16,7 @@
         <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
         <input id="email" type="email" formControlName="email" required email
                class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
-               [ngClass]="{ 'border-red-500': submitted && f['email'].errors }">
+               [ngClass]="{ 'border-red-500': submitted && f['email'].errors }" autocomplete="email">
         <div *ngIf="submitted && f['email'].errors" class="mt-1 text-sm text-red-600">
           <div *ngIf="f['email'].errors['required']">Email is required</div>
           <div *ngIf="f['email'].errors['email']">Email must be a valid email address</div>
@@ -27,7 +27,7 @@
         <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
         <input id="password" type="password" formControlName="password" required
                class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
-               [ngClass]="{ 'border-red-500': submitted && f['password'].errors }">
+               [ngClass]="{ 'border-red-500': submitted && f['password'].errors }" autocomplete="new-password">
         <div *ngIf="submitted && f['password'].errors" class="mt-1 text-sm text-red-600">
           <div *ngIf="f['password'].errors['required']">Password is required</div>
           <!-- Add more password validation messages if needed -->
