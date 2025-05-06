@@ -25,8 +25,26 @@ public class StreamUrlService : IStreamUrlService
     public string GenerateStreamUrl(Guid matchId, MatchStatus status)
     {
         var baseUrl = _configuration["StreamSettings:BaseUrl"];
+        var developmentMockStreamUrl = _configuration["StreamSettings:DevelopmentMockStreamUrl"];
         string path;
-        
+
+        // Check if we are in a development-like scenario with a placeholder BaseUrl
+        // and a specific mock URL is provided.
+        if (baseUrl == "https://dev-stream.example.com/" && !string.IsNullOrEmpty(developmentMockStreamUrl))
+        {
+            switch (status)
+            {
+                case MatchStatus.Live:
+                case MatchStatus.OnDemand:
+                    return developmentMockStreamUrl; // Return the actual mock URL
+                case MatchStatus.Upcoming:
+                case MatchStatus.Canceled:
+                default:
+                    return string.Empty; // No URLs for upcoming or canceled matches
+            }
+        }
+
+        // Original logic for non-development placeholder scenarios or if mock URL isn't set
         switch (status)
         {
             case MatchStatus.Live:
@@ -39,6 +57,12 @@ public class StreamUrlService : IStreamUrlService
             case MatchStatus.Canceled:
             default:
                 return string.Empty; // No URLs for upcoming or canceled matches
+        }
+
+        if (string.IsNullOrEmpty(baseUrl) || string.IsNullOrEmpty(path))
+        {
+            // Avoid returning just the matchId if config is missing
+            return string.Empty; 
         }
 
         return $"{baseUrl}{path}{matchId}";

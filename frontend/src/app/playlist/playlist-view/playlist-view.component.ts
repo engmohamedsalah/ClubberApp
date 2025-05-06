@@ -115,7 +115,7 @@ export class PlaylistViewComponent implements OnInit, OnDestroy {
           </button>
         </div>
         <div class="relative" style="padding-top: 56.25%">
-          <iframe src="${match.streamURL || 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1'}"
+          <iframe src="${match.streamURL || ''}"
             class="absolute inset-0 w-full h-full"
             frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
