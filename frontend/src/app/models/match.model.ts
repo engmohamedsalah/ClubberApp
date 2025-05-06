@@ -38,7 +38,6 @@ export class MatchUIHelper {
 
   // Generate thumbnail URL based on match data if needed
   static getThumbnail(match: Match): string | undefined {
-    console.log('MatchUIHelper.getThumbnail called for:', match.title, 'Thumbnail URL:', match.thumbnail);
     return match.thumbnail;
   }
 }

@@ -129,15 +129,15 @@ export class MatchesService {
     // If using real backend, search via API
     if (this.featureFlagService.isUsingRealBackend()) {
       const params = new HttpParams()
-        .set('searchTerm', query.trim())
+        .set('competition', query.trim())
         .set('page', '1')
         .set('pageSize', '20');
 
-      this.apiService.get<ApiResponse<PaginatedResultDto<MatchDto>> | PaginatedResultDto<MatchDto>>(`${this.ENDPOINT}/search`, params)
+      this.apiService.get<ApiResponse<PaginatedResultDto<MatchDto>> | PaginatedResultDto<MatchDto>>(this.ENDPOINT, params)
         .pipe(
           tap(response => {
             // Log the response for debugging
-            this.loggingService.logInfo('Search API response', {
+            this.loggingService.logInfo('Search API response (using GetMatches with competition filter)', {
               type: typeof response,
               isArray: Array.isArray(response),
               isApiResponse: isApiResponse(response),
