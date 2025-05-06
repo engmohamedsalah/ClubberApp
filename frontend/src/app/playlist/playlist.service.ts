@@ -7,6 +7,21 @@ import { Match, MatchStatus, MatchAvailability } from '../models/match.model';
 import { Playlist, PlaylistActionResult } from '../models/playlist.model';
 import { ApiResponse, isApiResponse } from '../models/api-response.model';
 import { LoggingService } from '../core/services/logging.service';
+import { PaginatedResult } from '../models/pagination.model';
+import { MatchDto, mapMatchAvailability, mapMatchStatus } from '../core/adapters/match.adapter';
+
+// Type guard for PaginatedResult<MatchDto>
+function isPaginatedResultMatchDto(obj: unknown): obj is PaginatedResult<MatchDto> {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'data' in obj &&
+    Array.isArray((obj as PaginatedResult<MatchDto>).data) &&
+    'page' in obj &&
+    'pageSize' in obj &&
+    'totalCount' in obj
+  );
+}
 
 @Injectable({
   providedIn: 'root'
@@ -45,13 +60,14 @@ export class PlaylistService {
       return;
     }
 
-    // In production, use API
-    this.http.get<ApiResponse<Playlist> | Playlist>(this.apiUrl).pipe(
+    // In production, use API - Expecting PaginatedResult<MatchDto> based on backend controller
+    this.http.get<ApiResponse<PaginatedResult<MatchDto>> | PaginatedResult<MatchDto>>(this.apiUrl).pipe(
       tap(response => {
         // Log the response for debugging
         this.loggingService.logInfo('Playlist API response', {
           type: typeof response,
           isApiResponse: isApiResponse(response),
+          isPaginatedResult: isPaginatedResultMatchDto(response),
           structure: response ? JSON.stringify(response).substring(0, 100) + '...' : 'null/undefined'
         });
 
@@ -61,27 +77,50 @@ export class PlaylistService {
       }),
       map(response => {
         try {
-          // Handle ApiResponse wrapper
-          if (isApiResponse<Playlist>(response)) {
-            const playlist = response.data;
-            if (!playlist || !playlist.matches) {
-              return { matches: [] };
-            }
-            return {
-              ...playlist,
-              matches: playlist.matches.map(this.ensureMatchFormat)
-            };
+          let matchesDto: MatchDto[] = [];
+
+          if (!response) {
+            return { matches: [] }; // Handle empty response
           }
 
-          // Handle direct playlist object
-          const playlist = response as Playlist;
-          if (!playlist || !playlist.matches) {
-            return { matches: [] };
+          // Case 1: ApiResponse wrapper containing PaginatedResult<MatchDto>
+          if (isApiResponse<PaginatedResult<MatchDto>>(response)) {
+            const paginatedData = response.data;
+            if (paginatedData && paginatedData.data) {
+              matchesDto = paginatedData.data;
+            }
           }
-          return {
-            ...playlist,
-            matches: playlist.matches.map(this.ensureMatchFormat)
-          };
+          // Case 2: Direct PaginatedResult<MatchDto>
+          else if (isPaginatedResultMatchDto(response)) {
+            if (response.data) {
+              matchesDto = response.data;
+            }
+          }
+          // Case 3: Fallback for direct Playlist object (less likely based on backend code)
+          else if ((response as Playlist).matches) {
+             this.loggingService.logWarning('Received direct Playlist object, expected PaginatedResult');
+             // If it's a Playlist object, the matches are already of type Match[]
+             const matches = (response as Playlist).matches;
+             return { matches }; // Return directly
+          }
+
+          // If we found DTOs, map them, otherwise return empty
+          if (matchesDto.length > 0) {
+            // Map MatchDto[] to Match[] using standalone functions
+            const matches = matchesDto.map(dto => ({
+                id: dto.id || '',
+                title: dto.title || '',
+                competition: dto.competition || '',
+                date: dto.date ? new Date(dto.date) : new Date(),
+                status: mapMatchStatus(dto.status),
+                availability: mapMatchAvailability(dto.availability),
+                streamURL: dto.streamURL || ''
+            } as Match));
+            return { matches };
+          } else {
+             return { matches: [] }; // No usable match data found
+          }
+
         } catch (error) {
           this.loggingService.logError('Error processing playlist response', { error, response });
           return { matches: [] }; // Return empty playlist on error
@@ -173,7 +212,21 @@ export class PlaylistService {
       }),
       tap(result => {
         if (result.succeeded) {
-          this.playlistSubject.next(result.playlist?.matches || []);
+          // Optimistically add the match to the current playlist state
+          const currentPlaylist = this.playlistSubject.getValue();
+          // Ensure we don't add duplicates if the backend already included it (or if clicked twice quickly)
+          if (!currentPlaylist.some(m => m.id === formattedMatch.id)) {
+             const updatedPlaylist = [...currentPlaylist, formattedMatch];
+             this.playlistSubject.next(updatedPlaylist);
+          }
+          // Optionally, reconcile with backend response if it contains a playlist
+          else if (result.playlist && result.playlist.matches) {
+            // If backend *did* return a playlist, use that as the source of truth
+            // (This handles cases like 'already in playlist' correctly)
+            this.playlistSubject.next(result.playlist.matches.map(this.ensureMatchFormat));
+          }
+          // else: Backend succeeded but didn't return a playlist - rely on optimistic update
+
           this.showNotification(`${formattedMatch.title} added to your playlist!`, 'success');
         } else {
           this.errorSubject.next(result.message);
@@ -194,16 +247,18 @@ export class PlaylistService {
       return; // Match not in playlist
     }
 
+    // Optimistically remove from frontend state immediately
+    const optimisticPlaylist = currentPlaylist.filter(m => m.id !== matchId);
+    this.playlistSubject.next(optimisticPlaylist);
+
     // In development, use local storage
     if (!environment.production) {
-      const updatedPlaylist = currentPlaylist.filter(m => m.id !== matchId);
-      this.playlistSubject.next(updatedPlaylist);
-      this.saveToLocalStorage(updatedPlaylist);
+      this.saveToLocalStorage(optimisticPlaylist);
       this.showNotification(`${matchToRemove.title} removed from your playlist!`, 'success');
       return;
     }
 
-    // In production, use API
+    // In production, call API
     this.loadingSubject.next(true);
     this.http.delete<ApiResponse<PlaylistActionResult> | PlaylistActionResult>(`${this.apiUrl}/${matchId}`).pipe(
       tap(response => {
@@ -260,15 +315,25 @@ export class PlaylistService {
       }),
       tap(result => {
         if (result.succeeded) {
-          this.playlistSubject.next(result.playlist?.matches || []);
+          // Backend confirmed success. If it returned a playlist, use it as source of truth.
+          if (result.playlist && result.playlist.matches) {
+             this.playlistSubject.next(result.playlist.matches.map(this.ensureMatchFormat));
+          }
+          // else: Backend succeeded but didn't return playlist, rely on optimistic update
           this.showNotification(`Match removed from your playlist!`, 'success');
         } else {
+          // Removal failed on backend, revert optimistic update
+          this.playlistSubject.next(currentPlaylist);
           this.errorSubject.next(result.message);
           this.showNotification(result.message, 'error');
         }
         this.loadingSubject.next(false);
       }),
-      catchError(error => this.handleError('Failed to remove match from playlist', error))
+      catchError(error => {
+        // Revert optimistic update on error
+        this.playlistSubject.next(currentPlaylist);
+        return this.handleError('Failed to remove match from playlist', error);
+      })
     ).subscribe();
   }
 
@@ -283,17 +348,19 @@ export class PlaylistService {
   }
 
   // Ensure match object adheres to backend model structure
-  private ensureMatchFormat(match: Partial<Match>): Match {
-    // Extract only the properties present in the backend model
-    return {
-      id: match.id || '',
-      title: match.title || '',
-      competition: match.competition || '',
-      date: match.date || new Date(),
-      status: match.status || MatchStatus.Upcoming,
-      availability: match.availability || MatchAvailability.Available,
-      streamURL: match.streamURL || ''
-    };
+  private ensureMatchFormat(match: Partial<Match> | MatchDto): Match {
+      // Check if it looks like a DTO (has string date/status/availability)
+      const isDto = typeof match.date === 'string' || typeof match.status === 'string' || typeof match.availability === 'string';
+
+      return {
+        id: match.id || '',
+        title: match.title || '',
+        competition: match.competition || '',
+        date: match.date ? new Date(match.date) : new Date(), // Handles both Date and string date
+        status: isDto ? mapMatchStatus(match.status as string) : (match.status || MatchStatus.Upcoming),
+        availability: isDto ? mapMatchAvailability(match.availability as string) : (match.availability || MatchAvailability.Unavailable),
+        streamURL: match.streamURL || ''
+      };
   }
 
   // Show notification helper method

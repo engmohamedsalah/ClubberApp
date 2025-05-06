@@ -57,16 +57,41 @@ public class PlaylistService : IPlaylistService
         };
 
         await _unitOfWork.PlaylistRepository.AddAsync(playlistEntry);
-        await _unitOfWork.SaveChangesAsync();
-
-        // Return the updated playlist
-        var updatedMatches = await _unitOfWork.PlaylistRepository.GetMatchesByUserIdAsync(userId);
-        return new PlaylistActionResultDto
+        
+        try 
         {
-            Succeeded = true,
-            Message = "Match added to playlist successfully.",
-            Playlist = new PlaylistDto { Matches = _mapper.Map<List<MatchDto>>(updatedMatches) }
-        };
+            var numberOfChanges = await _unitOfWork.SaveChangesAsync(); // Get the number of changes
+
+            if (numberOfChanges < 1) // Check if any rows were actually affected
+            {
+                // Log this critical failure on the backend if a logger is available
+                // _logger.LogError($"Failed to persist playlist entry to database for user {userId} and match {matchId}. SaveChangesAsync returned {numberOfChanges}.");
+                return new PlaylistActionResultDto { 
+                    Succeeded = false, 
+                    Message = "Failed to save update to the playlist in the database.", // More accurate message
+                    Playlist = null // Or potentially fetch and return the current unchanged playlist
+                };
+            }
+
+            // If changes were made, then fetch and return the updated playlist
+            var updatedMatches = await _unitOfWork.PlaylistRepository.GetMatchesByUserIdAsync(userId);
+            return new PlaylistActionResultDto
+            {
+                Succeeded = true,
+                Message = "Match added to playlist successfully.",
+                Playlist = new PlaylistDto { Matches = _mapper.Map<List<MatchDto>>(updatedMatches) }
+            };
+        } 
+        catch (Exception ex) 
+        {
+            // Log the exception if a logger is available
+            // _logger.LogError(ex, $"Exception occurred during SaveChangesAsync for playlist entry for user {userId} and match {matchId}.");
+            return new PlaylistActionResultDto {
+                Succeeded = false,
+                Message = $"An error occurred while saving the playlist: {ex.Message}",
+                Playlist = null
+            };
+        }
     }
 
     public async Task<PlaylistActionResultDto> RemoveMatchFromPlaylistAsync(Guid userId, Guid matchId)
