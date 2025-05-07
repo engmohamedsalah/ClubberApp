@@ -116,9 +116,17 @@ export class MatchesListComponent implements OnInit, OnDestroy {
 
     this.searchTimeout = setTimeout(() => {
       this.currentPage = 1; // Reset to first page on search
-      // For simplicity, using the non-paginated search for now
-      // In a real app, you would implement server-side search with pagination
-      this.matchesService.searchMatches(this.searchQuery);
+      const trimmedQuery = this.searchQuery.trim();
+
+      if (!trimmedQuery) {
+        // If search query is empty, reload based on the current primary filter and pagination settings
+        this.loadPaginatedMatches();
+      } else {
+        // Otherwise, perform the search
+        // For simplicity, using the non-paginated search for now - TODO: This was an old comment, it IS using paginated search now via the service
+        // In a real app, you would implement server-side search with pagination
+        this.matchesService.searchMatches(trimmedQuery);
+      }
     }, 300);
   }
 
