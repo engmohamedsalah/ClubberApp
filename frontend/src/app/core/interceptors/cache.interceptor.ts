@@ -81,7 +81,9 @@ export class CacheInterceptor implements HttpInterceptor {
     const nonCacheableEndpoints = [
       '/api/auth',    // Auth endpoints
       '/api/user',    // User data
-      '/api/metrics'  // Metrics/analytics
+      '/api/metrics', // Metrics/analytics
+      '/api/v1/Matches', // Skip caching for matches list
+      '/api/v1/Playlist' // Skip caching for playlist
     ];
 
     return nonCacheableEndpoints.some(endpoint => url.includes(endpoint));
