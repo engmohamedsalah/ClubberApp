@@ -74,10 +74,9 @@ export class PlaylistViewComponent implements OnInit, OnDestroy {
       const query = this.searchQuery.toLowerCase().trim();
 
       // If search query is empty, reset to showing all matches in playlist
-      if (!query) {
-        this.playlistService.loadPlaylist();
-        return;
-      }
+      // The service's filterPlaylist method will handle empty query to show all.
+      this.playlistService.filterPlaylist(query);
+
     }, 300);
   }
 

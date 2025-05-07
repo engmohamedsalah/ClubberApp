@@ -31,6 +31,7 @@ export class PlaylistService {
 
   // State management
   private playlistSubject = new BehaviorSubject<Match[]>([]);
+  private unfilteredPlaylistSubject = new BehaviorSubject<Match[]>([]); // Holds the original unfiltered list
   private loadingSubject = new BehaviorSubject<boolean>(false);
   private errorSubject = new BehaviorSubject<string | null>(null);
   private notificationSubject = new BehaviorSubject<{message: string, type: 'success' | 'error'} | null>(null);
@@ -44,6 +45,9 @@ export class PlaylistService {
   constructor(private http: HttpClient, private loggingService: LoggingService) {
     // Configure API URL from environment
     this.apiUrl = `${environment.apiUrl}/Playlist`;
+
+    // Initialize unfiltered playlist subject
+    this.unfilteredPlaylistSubject.next([]); // Initialize with empty array
 
     // Load playlist from local storage on init
     this.loadFromLocalStorage();
@@ -129,10 +133,29 @@ export class PlaylistService {
       }),
       tap(playlist => {
         this.playlistSubject.next(playlist.matches);
+        this.unfilteredPlaylistSubject.next(playlist.matches); // Store the unfiltered list
         this.loadingSubject.next(false);
       }),
       catchError(error => this.handleError('Failed to load playlist', error))
     ).subscribe();
+  }
+
+  // Filter playlist based on a search query
+  filterPlaylist(query: string): void {
+    const normalizedQuery = query.toLowerCase().trim();
+    const unfilteredPlaylist = this.unfilteredPlaylistSubject.getValue();
+
+    if (!normalizedQuery) {
+      this.playlistSubject.next(unfilteredPlaylist); // If query is empty, show all
+      return;
+    }
+
+    const filteredMatches = unfilteredPlaylist.filter(match =>
+      (match.title && match.title.toLowerCase().includes(normalizedQuery)) ||
+      (match.competition && match.competition.toLowerCase().includes(normalizedQuery))
+      // Add other fields to search if necessary, e.g., match.location
+    );
+    this.playlistSubject.next(filteredMatches);
   }
 
   // Add match to playlist
@@ -387,19 +410,24 @@ export class PlaylistService {
         const matches = JSON.parse(savedPlaylist);
         // Ensure all matches loaded from storage follow backend model
         if (Array.isArray(matches)) {
-          this.playlistSubject.next(matches.map(this.ensureMatchFormat));
+          const formattedMatches = matches.map(this.ensureMatchFormat);
+          this.playlistSubject.next(formattedMatches);
+          this.unfilteredPlaylistSubject.next(formattedMatches); // Store unfiltered from local storage
         } else {
           // Initialize with empty array if matches is not an array
           this.playlistSubject.next([]);
+          this.unfilteredPlaylistSubject.next([]);
         }
       } else {
         // Initialize with empty array if no playlist in localStorage
         this.playlistSubject.next([]);
+        this.unfilteredPlaylistSubject.next([]);
       }
     } catch (error) {
       console.error('Error loading playlist from local storage:', error);
       // Initialize with empty array on error
       this.playlistSubject.next([]);
+      this.unfilteredPlaylistSubject.next([]);
     }
   }
 
