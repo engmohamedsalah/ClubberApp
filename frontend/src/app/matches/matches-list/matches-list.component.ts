@@ -8,11 +8,12 @@ import { PlaylistService } from '../../playlist/playlist.service';
 import { NotificationComponent } from '../../shared';
 import { PaginatedResult, PaginationHelper } from '../../models/pagination.model';
 import { LoggingService } from '../../core/services/logging.service';
+import { MatchCardComponent } from '../../shared/components/match-card/match-card.component';
 
 @Component({
   selector: 'app-matches-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, NotificationComponent],
+  imports: [CommonModule, FormsModule, NotificationComponent, MatchCardComponent],
   templateUrl: './matches-list.component.html',
   styleUrls: ['./matches-list.component.css']
 })
@@ -58,28 +59,6 @@ export class MatchesListComponent implements OnInit, OnDestroy {
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
     }
-  }
-
-  // Helper methods to make UI properties available to the template
-  isLive(match: Match): boolean {
-    return MatchUIHelper.isLive(match);
-  }
-
-  isReplay(match: Match): boolean {
-    return MatchUIHelper.isReplay(match);
-  }
-
-  getLocation(match: Match): string | undefined {
-    // In a real app, this might come from a separate venue/location DB
-    // For demo purposes, extract it from the competition field if present
-    if (match.competition.includes('at ')) {
-      return match.competition.split('at ')[1].trim();
-    }
-    return undefined;
-  }
-
-  getThumbnail(match: Match): string | undefined {
-    return MatchUIHelper.getThumbnail(match);
   }
 
   // Load paginated matches
@@ -222,6 +201,28 @@ export class MatchesListComponent implements OnInit, OnDestroy {
   // Clear notification
   clearNotification(): void {
     this.playlistService.clearNotification();
+  }
+
+  // Helper methods to make UI properties available to the template
+  isLive(match: Match): boolean {
+    return MatchUIHelper.isLive(match);
+  }
+
+  isReplay(match: Match): boolean {
+    return MatchUIHelper.isReplay(match);
+  }
+
+  getLocation(match: Match): string | undefined {
+    // In a real app, this might come from a separate venue/location DB
+    // For demo purposes, extract it from the competition field if present
+    if (match.competition.includes('at ')) {
+      return match.competition.split('at ')[1].trim();
+    }
+    return undefined;
+  }
+
+  getThumbnail(match: Match): string | undefined {
+    return MatchUIHelper.getThumbnail(match);
   }
 }
 

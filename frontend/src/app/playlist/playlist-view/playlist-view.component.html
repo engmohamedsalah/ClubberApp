@@ -43,57 +43,14 @@
     <!-- Playlist Matches Grid -->
     <div *ngIf="(loading$ | async) === false && (error$ | async) === null && (playlist$ | async) as matches">
       <div *ngIf="matches.length > 0; else emptyPlaylist" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Match Card -->
-        <div *ngFor="let match of matches" class="bg-gray-800 rounded-lg shadow-lg overflow-hidden transition-transform hover:scale-[1.02]">
-          <!-- Match Image/Thumbnail -->
-          <div class="relative h-48 bg-gray-700">
-            <img *ngIf="getThumbnail(match)" [src]="getThumbnail(match)" alt="{{ match.title }}" class="w-full h-full object-cover">
-            <div *ngIf="!getThumbnail(match)" class="w-full h-full flex items-center justify-center">
-              <span class="text-gray-500">No image available</span>
-            </div>
-
-            <!-- Match Status Badge -->
-            <div
-              [ngClass]="{
-                'bg-green-600': isLive(match),
-                'bg-blue-600': !isLive(match) && !isReplay(match),
-                'bg-purple-600': isReplay(match)
-              }"
-              class="absolute top-3 right-3 text-xs font-bold px-2 py-1 rounded-full text-white">
-              {{ isLive(match) ? 'LIVE' : (isReplay(match) ? 'REPLAY' : 'UPCOMING') }}
-            </div>
-          </div>
-
-          <!-- Match Info -->
-          <div class="p-5">
-            <div class="flex justify-between items-start mb-2">
-              <h3 class="text-xl font-bold text-white">{{ match.title }}</h3>
-            </div>
-
-            <div class="mb-4">
-              <p class="text-lime-400 text-sm font-semibold">{{ match.competition }}</p>
-              <p class="text-gray-400 text-sm mt-1" *ngIf="getLocation(match)">{{ getLocation(match) }}</p>
-              <p class="text-gray-400 text-sm mt-1">{{ match.date | date:'medium' }}</p>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex flex-col space-y-2">
-              <button
-                (click)="removeFromPlaylist(match.id)"
-                class="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800">
-                Remove from Playlist
-              </button>
-
-              <!-- Watch Button (only for live or replay) -->
-              <button
-                *ngIf="isLive(match) || isReplay(match)"
-                (click)="watchMatch(match)"
-                class="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800">
-                {{ isLive(match) ? 'Watch Live' : 'Watch Replay' }}
-              </button>
-            </div>
-          </div>
-        </div>
+        <!-- Use Shared Match Card Component -->
+        <app-match-card
+          *ngFor="let match of matches"
+          [match]="match"
+          context="playlist-view"
+          (removeFromPlaylist)="removeFromPlaylist($event)"
+          (watchMatch)="watchMatch($event)">
+        </app-match-card>
       </div>
 
       <!-- Empty Playlist Template -->
