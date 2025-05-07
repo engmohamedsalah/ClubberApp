@@ -97,11 +97,9 @@ export class LoggingService {
   private sendErrorToServer(message: string, error: unknown): void {
     // This is a placeholder for actual server-side error logging
     // In a real app, this would use a service like Sentry, LogRocket, etc.
-    if (!environment.production) {
-      console.log('[Mock Error Reporting] Would send to server:', message, error);
-    } else {
-      // Production - would send to actual error tracking service
-      // Example: Sentry.captureException(error, { extra: { message } });
-    }
+    // The following log indicates that an error would be sent, using the parameters.
+    console.warn('[LoggingService] Error reporting to server is not implemented. Details: ', { message, error });
+    // Production - would send to actual error tracking service
+    // Example: Sentry.captureException(error, { extra: { message } });
   }
 }

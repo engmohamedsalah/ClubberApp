@@ -8,7 +8,6 @@ import {
 } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject, of } from 'rxjs';
 import { catchError, filter, take, switchMap, finalize } from 'rxjs/operators';
-import { environment } from '../../../environments/environment';
 import { LoggingService } from '../services/logging.service';
 
 /**
@@ -117,22 +116,15 @@ export class AuthInterceptor implements HttpInterceptor {
    * This is a placeholder - in a real app this would call your auth service
    */
   private refreshToken(): Observable<string> {
-    // Mock implementation for now
+    // Mock implementation for now - This entire method is a placeholder
     // In a real app, this would call your auth service to refresh the token
-    this.loggingService.logInfo('Refreshing authentication token');
+    this.loggingService.logInfo('Refreshing authentication token (Placeholder - No actual refresh implemented)');
 
-    if (!environment.production) {
-      // For development, just return a dummy token
-      const newToken = 'refreshed-dummy-token-' + new Date().getTime();
-      localStorage.setItem('auth_token', newToken);
-      return of(newToken);
-    } else {
-      // In production, this would be a real API call
-      // return this.authService.refreshToken().pipe(
-      //   map(response => response.token)
-      // );
-      return of(''); // Placeholder
-    }
+    // In production, this would be a real API call
+    // return this.authService.refreshToken().pipe(
+    //   map(response => response.token)
+    // );
+    return of(''); // Placeholder - returns an empty token
   }
 
   /**

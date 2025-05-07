@@ -49,22 +49,15 @@ export class PlaylistService {
     // Initialize unfiltered playlist subject
     this.unfilteredPlaylistSubject.next([]); // Initialize with empty array
 
-    // Load playlist from local storage on init
-    this.loadFromLocalStorage();
+    // Load playlist on init - now always uses the API via loadPlaylist()
+    this.loadPlaylist();
   }
 
   // Load playlist
   loadPlaylist(): void {
     this.loadingSubject.next(true);
 
-    // In development, use local storage
-    if (!environment.production) {
-      this.loadFromLocalStorage();
-      this.loadingSubject.next(false);
-      return;
-    }
-
-    // In production, use API - Expecting PaginatedResult<MatchDto> based on backend controller
+    // ALWAYS In production, use API - Expecting PaginatedResult<MatchDto> based on backend controller
     this.http.get<ApiResponse<PaginatedResult<MatchDto>> | PaginatedResult<MatchDto>>(this.apiUrl).pipe(
       tap(response => {
         // Log the response for debugging
@@ -170,16 +163,7 @@ export class PlaylistService {
       return;
     }
 
-    // In development, use local storage
-    if (!environment.production) {
-      const updatedPlaylist = [...currentPlaylist, formattedMatch];
-      this.playlistSubject.next(updatedPlaylist);
-      this.saveToLocalStorage(updatedPlaylist);
-      this.showNotification(`${formattedMatch.title} added to your playlist!`, 'success');
-      return;
-    }
-
-    // In production, use API
+    // ALWAYS In production, use API
     this.loadingSubject.next(true);
     this.http.post<ApiResponse<PlaylistActionResult> | PlaylistActionResult>(`${this.apiUrl}/${formattedMatch.id}`, {}).pipe(
       tap(response => {
@@ -275,14 +259,7 @@ export class PlaylistService {
     const optimisticPlaylist = currentPlaylist.filter(m => m.id !== matchId);
     this.playlistSubject.next(optimisticPlaylist);
 
-    // In development, use local storage
-    if (!environment.production) {
-      this.saveToLocalStorage(optimisticPlaylist);
-      this.showNotification(`${matchToRemove.title} removed from your playlist!`, 'success');
-      return;
-    }
-
-    // In production, call API
+    // ALWAYS In production, call API
     this.loadingSubject.next(true);
     this.http.delete<ApiResponse<PlaylistActionResult> | PlaylistActionResult>(`${this.apiUrl}/${matchId}`).pipe(
       tap(response => {

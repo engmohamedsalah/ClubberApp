@@ -93,13 +93,7 @@ export class MatchesService {
         catchError(error => {
           this.handleError('Failed to load matches. Please try again.', error);
 
-          // Fallback to mock data in development
-          if (!environment.production) {
-            const mockResult = this.getMockPaginatedResult(page, pageSize);
-            this.paginatedResultSubject.next(mockResult);
-            this.matchesSubject.next(mockResult.data);
-            return of(mockResult);
-          }
+          // No longer fallback to mock data in development on error, always return empty.
           return of(this.getEmptyPaginatedResult());
         })
       )
