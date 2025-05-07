@@ -3,7 +3,7 @@ import { HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable, of, timer } from 'rxjs';
 import { catchError, switchMap, tap, map, retry } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { Match, MatchStatus, MatchAvailability } from '../models/match.model';
+import { Match, MatchStatus } from '../models/match.model';
 import { PaginatedResult } from '../models/pagination.model';
 import { ApiService } from '../core/services/api.service';
 import { LoggingService } from '../core/services/logging.service';
@@ -120,84 +120,61 @@ export class MatchesService {
 
     this.loadingSubject.next(true);
 
-    // If using real backend, search via API
-    if (this.featureFlagService.isUsingRealBackend()) {
-      const params = new HttpParams()
-        .set('competition', query.trim())
-        .set('page', '1')
-        .set('pageSize', '20');
+    // ALWAYS using real backend, search via API
+    const params = new HttpParams()
+      .set('competition', query.trim())
+      .set('page', '1')
+      .set('pageSize', '20');
 
-      this.apiService.get<ApiResponse<PaginatedResultDto<MatchDto>> | PaginatedResultDto<MatchDto>>(this.ENDPOINT, params)
-        .pipe(
-          tap(response => {
-            // Log the response for debugging
-            this.loggingService.logInfo('Search API response (using GetMatches with competition filter)', {
-              type: typeof response,
-              isArray: Array.isArray(response),
-              isApiResponse: isApiResponse(response),
-              structure: response ? JSON.stringify(response).substring(0, 100) + '...' : 'null/undefined'
-            });
-          }),
-          map(response => {
-            try {
-              if (!response) {
-                return this.getEmptyPaginatedResult(); // Handle empty response
-              }
-
-              // Case 1: ApiResponse wrapper
-              if (isApiResponse<PaginatedResultDto<MatchDto>>(response)) {
-                const paginatedData = response.data;
-                if (!paginatedData) {
-                  return this.getEmptyPaginatedResult(); // Empty data
-                }
-                return PaginationAdapter.fromApi(paginatedData, MatchAdapter.fromApi);
-              }
-
-              // Case 2: Direct PaginatedResultDto
-              return PaginationAdapter.fromApi(response as PaginatedResultDto<MatchDto>, MatchAdapter.fromApi);
-            } catch (error) {
-              this.loggingService.logError('Error in search PaginationAdapter.fromApi', { error, response });
-              return this.getEmptyPaginatedResult();
+    this.apiService.get<ApiResponse<PaginatedResultDto<MatchDto>> | PaginatedResultDto<MatchDto>>(this.ENDPOINT, params)
+      .pipe(
+        tap(response => {
+          // Log the response for debugging
+          this.loggingService.logInfo('Search API response (using GetMatches with competition filter)', {
+            type: typeof response,
+            isArray: Array.isArray(response),
+            isApiResponse: isApiResponse(response),
+            structure: response ? JSON.stringify(response).substring(0, 100) + '...' : 'null/undefined'
+          });
+        }),
+        map(response => {
+          try {
+            if (!response) {
+              return this.getEmptyPaginatedResult(); // Handle empty response
             }
-          }),
-          tap((result: PaginatedResult<Match>) => {
-            this.paginatedResultSubject.next(result);
-            this.matchesSubject.next(result.data);
-            this.loadingSubject.next(false);
-          }),
-          catchError(error => {
-            this.handleError('Failed to search matches', error);
-            return of(this.getEmptyPaginatedResult());
-          })
-        )
-        .subscribe();
-    } else {
-      // For development, filter locally
-      const currentMatches = this.matchesSubject.getValue();
-      const searchTermLower = query.toLowerCase();
 
-      const filteredMatches = currentMatches.filter(match =>
-        match.competition.toLowerCase().includes(searchTermLower) ||
-        match.title.toLowerCase().includes(searchTermLower)
-      );
+            // Case 1: ApiResponse wrapper
+            if (isApiResponse<PaginatedResultDto<MatchDto>>(response)) {
+              const paginatedData = response.data;
+              if (!paginatedData) {
+                return this.getEmptyPaginatedResult(); // Empty data
+              }
+              return PaginationAdapter.fromApi(paginatedData, MatchAdapter.fromApi);
+            }
 
-      this.matchesSubject.next(filteredMatches);
-      this.loadingSubject.next(false);
-    }
+            // Case 2: Direct PaginatedResultDto
+            return PaginationAdapter.fromApi(response as PaginatedResultDto<MatchDto>, MatchAdapter.fromApi);
+          } catch (error) {
+            this.loggingService.logError('Error in search PaginationAdapter.fromApi', { error, response });
+            return this.getEmptyPaginatedResult();
+          }
+        }),
+        tap((result: PaginatedResult<Match>) => {
+          this.paginatedResultSubject.next(result);
+          this.matchesSubject.next(result.data);
+          this.loadingSubject.next(false);
+        }),
+        catchError(error => {
+          this.handleError('Failed to search matches', error);
+          return of(this.getEmptyPaginatedResult());
+        })
+      )
+      .subscribe();
   }
 
   // Private method to fetch matches from API (non-paginated)
   private fetchMatches(filter?: 'Live' | 'Replay' | null): Observable<Match[]> {
-    // Use mock data if we're not using the real backend
-    if (!this.featureFlagService.isUsingRealBackend()) {
-      this.loggingService.logInfo('Using mock match data');
-      let mockData = this.getMockMatches();
-      if (filter) {
-        mockData = this.applyFilter(mockData, filter);
-      }
-      return of(mockData);
-    }
-
+    // ALWAYS using real backend
     // Build params for the API request
     let params = new HttpParams();
     if (filter === 'Live') {
@@ -300,20 +277,7 @@ export class MatchesService {
     sortBy?: string,
     sortDescending?: boolean
   ): Observable<PaginatedResult<Match>> {
-    // Use mock data if we're not using the real backend
-    if (!this.featureFlagService.isUsingRealBackend()) {
-      this.loggingService.logInfo('Using mock paginated match data');
-      let mockData = this.getMockPaginatedResult(page, pageSize);
-      if (filter) {
-        // Apply filter to mock data
-        mockData = {
-          ...mockData,
-          data: this.applyFilter(mockData.data, filter)
-        };
-      }
-      return of(mockData);
-    }
-
+    // ALWAYS using real backend
     // In production, use the API with retry
     let params = new HttpParams()
       .set('page', page.toString())
@@ -429,68 +393,8 @@ export class MatchesService {
     };
   }
 
-  // Mock data for development and testing
-  private getMockMatches(): Match[] {
-    const mockData: Match[] = [
-      {
-        id: '1',
-        title: 'Dublin vs Kerry',
-        competition: 'Football Championship',
-        date: new Date(),
-        status: MatchStatus.Live,
-        availability: MatchAvailability.Available,
-        streamURL: 'https://example.com/stream/1'
-      },
-      {
-        id: '2',
-        title: 'Cork vs Tipperary',
-        competition: 'Hurling Championship',
-        date: new Date(Date.now() - 86400000), // Yesterday
-        status: MatchStatus.OnDemand,
-        availability: MatchAvailability.Available,
-        streamURL: 'https://example.com/stream/2'
-      },
-      {
-        id: '3',
-        title: 'Mayo vs Galway',
-        competition: 'Football Championship',
-        date: new Date(Date.now() + 86400000), // Tomorrow
-        status: MatchStatus.Upcoming,
-        availability: MatchAvailability.Available,
-        streamURL: 'https://example.com/stream/3'
-      },
-      {
-        id: '4',
-        title: 'Kilkenny vs Wexford',
-        competition: 'Hurling Championship',
-        date: new Date(),
-        status: MatchStatus.Live,
-        availability: MatchAvailability.Available,
-        streamURL: 'https://example.com/stream/4'
-      }
-    ];
-
-    return mockData;
-  }
-
-  // Mock paginated result for development and testing
-  private getMockPaginatedResult(page: number, pageSize: number): PaginatedResult<Match> {
-    const allMatches = this.getMockMatches();
-    const totalCount = allMatches.length;
-
-    // Calculate start and end indices
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = Math.min(startIndex + pageSize, totalCount);
-
-    // Get the slice of data for this page
-    const data = allMatches.slice(startIndex, endIndex);
-
-    return {
-      data,
-      page,
-      pageSize,
-      totalCount
-    };
-  }
+  // Mock data methods removed as isUsingRealBackend is now always true
+  // private getMockMatches(): Match[] { ... }
+  // private getMockPaginatedResult(page: number, pageSize: number): PaginatedResult<Match> { ... }
 }
 

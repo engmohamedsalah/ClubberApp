@@ -40,6 +40,6 @@ export class FeatureFlagService {
    * @returns true if using real backend, false if using mock data
    */
   isUsingRealBackend(): boolean {
-    return environment.useRealBackend ?? environment.production;
+    return true; // Always use real backend
   }
 }

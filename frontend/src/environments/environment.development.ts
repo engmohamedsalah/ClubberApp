@@ -6,7 +6,6 @@ export const environment = {
   production: false,
   apiUrl: "/api/v1", // Use relative path for development with proxy
   autoRefreshInterval: 60000, // Auto-refresh interval in milliseconds (60 seconds)
-  useRealBackend: false, // Toggle between mock and real backend in development
   apiTimeoutMs: 10000, // 10 seconds timeout for API calls
   maxRetries: 3, // Maximum number of retries for failed API calls
   mockStreamingEnabled: true, // Enable mock streaming

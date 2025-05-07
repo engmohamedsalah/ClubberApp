@@ -378,42 +378,5 @@ export class PlaylistService {
     this.showNotification(errorMessage, 'error');
     return of({ succeeded: false, message: 'Error', playlist: null });
   }
-
-  // Helper methods for local storage
-  private loadFromLocalStorage(): void {
-    try {
-      const savedPlaylist = localStorage.getItem('clubber_playlist');
-      if (savedPlaylist) {
-        const matches = JSON.parse(savedPlaylist);
-        // Ensure all matches loaded from storage follow backend model
-        if (Array.isArray(matches)) {
-          const formattedMatches = matches.map(this.ensureMatchFormat);
-          this.playlistSubject.next(formattedMatches);
-          this.unfilteredPlaylistSubject.next(formattedMatches); // Store unfiltered from local storage
-        } else {
-          // Initialize with empty array if matches is not an array
-          this.playlistSubject.next([]);
-          this.unfilteredPlaylistSubject.next([]);
-        }
-      } else {
-        // Initialize with empty array if no playlist in localStorage
-        this.playlistSubject.next([]);
-        this.unfilteredPlaylistSubject.next([]);
-      }
-    } catch (error) {
-      console.error('Error loading playlist from local storage:', error);
-      // Initialize with empty array on error
-      this.playlistSubject.next([]);
-      this.unfilteredPlaylistSubject.next([]);
-    }
-  }
-
-  private saveToLocalStorage(playlist: Match[]): void {
-    try {
-      localStorage.setItem('clubber_playlist', JSON.stringify(playlist));
-    } catch (error) {
-      console.error('Error saving playlist to local storage:', error);
-    }
-  }
 }
 
