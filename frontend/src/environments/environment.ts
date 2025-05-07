@@ -12,7 +12,7 @@ export const environment = {
   },
   logging: {
     logApiErrors: true,
-    logLevelProduction: 'error', // Only log errors in production
+    logLevelProduction: 'info', // Only log errors in production
     sendErrorsToServer: true
   }
 };

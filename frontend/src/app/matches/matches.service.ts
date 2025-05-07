@@ -49,11 +49,39 @@ export class MatchesService {
     // Initialize PaginationAdapter with LoggingService
     PaginationAdapter.initialize(this.loggingService);
 
+    // Log the auto-refresh interval value before checking it
+    this.loggingService.logInfo('[MatchesService] Checking auto-refresh interval. Value:', environment.autoRefreshInterval);
+
     // Set up auto-refresh if enabled
     if (environment.autoRefreshInterval > 0) {
+      this.loggingService.logInfo('[MatchesService] Setting up auto-refresh timer with interval:', environment.autoRefreshInterval);
       timer(0, environment.autoRefreshInterval)
-        .pipe(switchMap(() => this.fetchMatches()))
-        .subscribe();
+        .pipe(
+          tap(() => this.loggingService.logInfo('[MatchesService] Auto-refresh triggered. Fetching matches...')),
+          switchMap(() => this.fetchMatches()),
+          tap(matches => {
+            const matchesArray = Array.isArray(matches) ? matches : [];
+            this.matchesSubject.next(matchesArray);
+            this.loggingService.logInfo('[MatchesService] Auto-refresh successfully updated matchesSubject with:', matchesArray);
+
+            // Also update paginatedResultSubject for UI that binds to it
+            // This is a simplified PaginatedResult based on the non-paginated fetch
+            const refreshedPaginatedResult: PaginatedResult<Match> = {
+              data: matchesArray,
+              page: 1, // Assuming this refresh is like viewing the first page
+              pageSize: matchesArray.length > 0 ? matchesArray.length : 10, // Or a default
+              totalCount: matchesArray.length // Total count is just the current array length
+            };
+            this.paginatedResultSubject.next(refreshedPaginatedResult);
+            this.loggingService.logInfo('[MatchesService] Auto-refresh also updated paginatedResultSubject with:', refreshedPaginatedResult);
+          })
+        )
+        .subscribe({
+          next: () => { /* Subjects are updated in the tap operator */ },
+          error: (err) => this.loggingService.logError('[MatchesService] Error in auto-refresh timer observable:', err)
+        });
+    } else {
+      this.loggingService.logInfo('[MatchesService] Auto-refresh is disabled (interval <= 0).');
     }
   }
 
