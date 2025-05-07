@@ -399,6 +399,56 @@ export class MatchesService {
     };
   }
 
+
+  // Get a specific number of live matches
+  getLiveMatches(count: number): Observable<Match[]> {
+    return this.fetchPaginatedMatches(1, count, 'Live', 'date', true) // Fetch page 1, specified count, Live, sorted by date desc
+      .pipe(
+        map(result => result.data), // Extract only the data array
+        catchError(error => {
+          // Use the existing error handler but return an empty array for this specific call
+          this.handleError('Failed to load live matches.', error);
+          return of([]);
+        })
+      );
+  }
+
+  // Get a specific number of recent matches
+  getRecentMatches(count: number): Observable<Match[]> {
+    return this.fetchPaginatedMatches(1, count, null, 'date', true) // Fetch page 1, specified count, any status, sorted by date desc
+      .pipe(
+        map(result => result.data), // Extract only the data array
+        catchError(error => {
+          this.handleError('Failed to load recent matches.', error);
+          return of([]);
+        })
+      );
+  }
+
+  // Get a specific number of upcoming matches
+  getUpcomingMatches(count: number): Observable<Match[]> {
+    return this.fetchPaginatedMatches(1, count, 'Upcoming', 'date', false) // Fetch page 1, count, Upcoming, sorted date ASC
+      .pipe(
+        map(result => result.data),
+        catchError(error => {
+          this.handleError('Failed to load upcoming matches.', error);
+          return of([]);
+        })
+      );
+  }
+
+  // Get a specific number of replay matches
+  getReplayMatches(count: number): Observable<Match[]> {
+    return this.fetchPaginatedMatches(1, count, 'Replay', 'date', true) // Fetch page 1, count, Replay, sorted date DESC
+      .pipe(
+        map(result => result.data),
+        catchError(error => {
+          this.handleError('Failed to load replay matches.', error);
+          return of([]);
+        })
+      );
+  }
+
   // Mock data methods removed as isUsingRealBackend is now always true
   // private getMockMatches(): Match[] { ... }
   // private getMockPaginatedResult(page: number, pageSize: number): PaginatedResult<Match> { ... }

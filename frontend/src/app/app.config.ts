@@ -4,7 +4,6 @@ import { provideHttpClient, withInterceptorsFromDi, withInterceptors } from '@an
 import { ReactiveFormsModule } from '@angular/forms';
 import { routes } from './app.routes';
 import { CoreModule } from './core/core.module';
-import { authInterceptor } from './interceptors/auth.interceptor';
 
 /**
  * Simplified application configuration
@@ -14,7 +13,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(
       withInterceptorsFromDi(),
-      withInterceptors([authInterceptor])
+      withInterceptors([])
     ),
     importProvidersFrom(CoreModule, ReactiveFormsModule)
   ]

@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { MatchesService } from '../matches/matches.service';
 import { PlaylistService } from '../playlist/playlist.service';
 import { AuthService } from '../auth/auth.service';
-import { Match, MatchStatus } from '../models/match.model';
+import { Match } from '../models/match.model';
 
 @Component({
   selector: 'app-home',
@@ -19,7 +19,9 @@ export class HomeComponent implements OnInit {
   recentMatches: Match[] = [];
   playlistCount = 0;
   username = 'User';
-  loading = true;
+  loadingLive = true;
+  loadingRecent = true;
+  loadingPlaylist = true;
   error: string | null = null;
 
   constructor(
@@ -37,44 +39,57 @@ export class HomeComponent implements OnInit {
       this.username = 'Demo User';
     }
 
-    // Load matches
-    this.matchesService.loading$.subscribe(loading => {
-      this.loading = loading;
+    // *** Optimized Loading ***
+    this.error = null; // Reset error initially
+
+    // Load Live Matches (e.g., top 5)
+    this.loadingLive = true;
+    this.matchesService.getLiveMatches(5).subscribe({
+      next: matches => {
+        this.liveMatches = matches;
+        this.loadingLive = false;
+      },
+      error: () => { // Error is handled in service, just update loading
+        this.loadingLive = false;
+        // Optionally set a specific error message for this section
+      }
     });
 
-    this.matchesService.loadMatches();
-
-    // Subscribe to matches
-    this.matchesService.matches$.subscribe(matches => {
-      if (matches.length > 0) {
-        // Filter live matches
-        this.liveMatches = matches.filter(m => m.status === MatchStatus.Live).slice(0, 5);
-
-        // Get recent matches (using date to simulate - in reality you might have a 'recentlyAdded' flag)
-        this.recentMatches = [...matches]
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-          .slice(0, 4);
-
-        // Get featured matches (this would ideally be determined by your backend)
-        // For demo purposes, we'll just take some random ones
+    // Load Recent Matches (e.g., top 10 to pick from for featured/recent)
+    this.loadingRecent = true;
+    this.matchesService.getRecentMatches(10).subscribe({
+      next: matches => {
+        // Take top 4 for the "Recent" section
+        this.recentMatches = matches.slice(0, 4);
+        // Take random 6 from the fetched recent for "Featured"
         this.featuredMatches = this.getRandomMatches(matches, 6);
+        this.loadingRecent = false;
+      },
+      error: () => { // Error is handled in service, just update loading
+        this.loadingRecent = false;
+        // Optionally set a specific error message for this section
       }
     });
 
     // Get playlist count
+    this.loadingPlaylist = true;
     this.playlistService.playlist$.subscribe(playlist => {
       this.playlistCount = playlist.length;
+      // Assuming playlist loading state isn't directly available,
+      // we mark loading as false once we get the first emission.
+      // A more robust approach might involve a dedicated loading state for playlist.
+      this.loadingPlaylist = false;
     });
 
-    // Load playlist data
+    // Load playlist data (still needed for the count)
     this.playlistService.loadPlaylist();
 
-    // Handle errors
-    this.matchesService.error$.subscribe(error => {
-      if (error) {
-        this.error = error;
-      }
-    });
+    // Handle general errors (optional, as specific calls handle errors)
+    // this.matchesService.error$.subscribe(error => {
+    //   if (error) {
+    //     this.error = error;
+    //   }
+    // });
   }
 
   // Helper method to get random matches for featured section
