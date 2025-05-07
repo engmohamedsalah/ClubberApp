@@ -7,6 +7,7 @@ import { MatchesService } from '../matches.service';
 import { PlaylistService } from '../../playlist/playlist.service';
 import { NotificationComponent } from '../../shared';
 import { PaginatedResult, PaginationHelper } from '../../models/pagination.model';
+import { LoggingService } from '../../core/services/logging.service';
 
 @Component({
   selector: 'app-matches-list',
@@ -36,7 +37,8 @@ export class MatchesListComponent implements OnInit, OnDestroy {
 
   constructor(
     private matchesService: MatchesService,
-    private playlistService: PlaylistService
+    private playlistService: PlaylistService,
+    private loggingService: LoggingService
   ) {
     this.matches$ = this.matchesService.matches$;
     this.paginatedResult$ = this.matchesService.paginatedResult$;
@@ -90,6 +92,9 @@ export class MatchesListComponent implements OnInit, OnDestroy {
     } else if (this.currentFilter === 'Upcoming') {
       filterParam = 'Upcoming';
     }
+
+    // Log the filter being sent to the service
+    this.loggingService.logInfo('[MatchesListComponent] Calling loadPaginatedMatches with filter:', filterParam);
 
     this.matchesService.loadPaginatedMatches(
       this.currentPage,

@@ -283,6 +283,9 @@ export class MatchesService {
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
 
+    // Log received filter parameter
+    this.loggingService.logDebug('[MatchesService] fetchPaginatedMatches received filter:', filter);
+
     if (sortBy) {
       params = params.set('sortBy', sortBy);
     }
@@ -298,6 +301,9 @@ export class MatchesService {
     } else if (filter === 'Upcoming') {
       params = params.set('status', MatchStatus.Upcoming);
     }
+
+    // Log final parameters before API call
+    this.loggingService.logDebug('[MatchesService] fetchPaginatedMatches API params:', params.toString());
 
     // Use the resilient ApiService with retry
     return this.apiService.get<ApiResponse<PaginatedResultDto<MatchDto>> | PaginatedResultDto<MatchDto>>(this.ENDPOINT, params)
