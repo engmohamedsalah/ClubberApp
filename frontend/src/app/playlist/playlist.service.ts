@@ -114,7 +114,8 @@ export class PlaylistService {
                 date: dto.date ? new Date(dto.date) : new Date(),
                 status: mapMatchStatus(dto.status),
                 availability: mapMatchAvailability(dto.availability),
-                streamURL: dto.streamURL || ''
+                streamURL: dto.streamURL || '',
+                thumbnail: dto.thumbnail
             } as Match));
             return { matches };
           } else {
@@ -359,7 +360,8 @@ export class PlaylistService {
         date: match.date ? new Date(match.date) : new Date(), // Handles both Date and string date
         status: isDto ? mapMatchStatus(match.status as string) : (match.status || MatchStatus.Upcoming),
         availability: isDto ? mapMatchAvailability(match.availability as string) : (match.availability || MatchAvailability.Unavailable),
-        streamURL: match.streamURL || ''
+        streamURL: match.streamURL || '',
+        thumbnail: match.thumbnail || ''
       };
   }
 

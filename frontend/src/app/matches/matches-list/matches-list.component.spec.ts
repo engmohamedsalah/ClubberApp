@@ -77,7 +77,7 @@ describe("MatchesListComponent", () => {
         title: "Match 1",
         competition: "Comp A",
         date: new Date(),
-        status: MatchStatus.InProgress,
+        status: MatchStatus.Live,
         availability: MatchAvailability.Available,
         streamURL: "https://example.com/stream1"
       },
@@ -86,7 +86,7 @@ describe("MatchesListComponent", () => {
         title: "Match 2",
         competition: "Comp B",
         date: new Date(),
-        status: MatchStatus.Completed,
+        status: MatchStatus.OnDemand,
         availability: MatchAvailability.Available,
         streamURL: "https://example.com/stream2"
       }
@@ -128,7 +128,7 @@ describe("MatchesListComponent", () => {
         title: "Match 1",
         competition: "Comp A",
         date: new Date(),
-        status: MatchStatus.InProgress,
+        status: MatchStatus.Live,
         availability: MatchAvailability.Available,
         streamURL: "https://example.com/stream1"
       }
