@@ -29,14 +29,14 @@ For detailed setup instructions for the backend and frontend, please refer to th
 
 The backend provides a RESTful API for user authentication, managing matches, and handling playlists. Key endpoints include:
 
-*   `POST /api/Auth/register`: Register a new user.
-*   `POST /api/Auth/login`: Log in an existing user, returns JWT.
-*   `GET /api/Matches`: Get available matches (supports filtering and pagination).
-*   `GET /api/Playlist`: Get the authenticated user's playlist.
-*   `POST /api/Playlist/{matchId}`: Add a match to the user's playlist.
-*   `DELETE /api/Playlist/{matchId}`: Remove a match from the user's playlist.
+*   `POST /api/v1/Auth/register`: Register a new user.
+*   `POST /api/v1/Auth/login`: Log in an existing user, returns JWT.
+*   `GET /api/v1/Matches`: Get available matches (supports filtering and pagination).
+*   `GET /api/v1/Playlist`: Get the authenticated user's playlist.
+*   `POST /api/v1/Playlist/{matchId}`: Add a match to the user's playlist.
+*   `DELETE /api/v1/Playlist/{matchId}`: Remove a match from the user's playlist.
 
-For more details on request/response formats and parameters, please refer to the [API Endpoints](#api-endpoints) section and the backend controller source code in `backend/ClubberApp.Api/Controllers/`.
+For more details on request/response formats and parameters, please refer to the [API Endpoints](#api-endpoints) section and the backend controller source code in `backend/ClubberApp.Api/Controllers/v1/`.
 
 ## Development Scripts
 
@@ -198,12 +198,12 @@ The backend follows Clean Architecture principles, separating concerns into dist
 
 ### API Endpoints
 
-*   `POST /api/Auth/register`: Register a new user.
-*   `POST /api/Auth/login`: Log in an existing user, returns JWT.
-*   `GET /api/Matches`: Get all available matches.
-*   `GET /api/Playlist`: Get the authenticated user's playlist.
-*   `POST /api/Playlist/{matchId}`: Add a match to the playlist.
-*   `DELETE /api/Playlist/{matchId}`: Remove a match from the playlist.
+*   `POST /api/v1/Auth/register`: Register a new user.
+*   `POST /api/v1/Auth/login`: Log in an existing user, returns JWT.
+*   `GET /api/v1/Matches`: Get all available matches.
+*   `GET /api/v1/Playlist`: Get the authenticated user's playlist.
+*   `POST /api/v1/Playlist/{matchId}`: Add a match to the playlist.
+*   `DELETE /api/v1/Playlist/{matchId}`: Remove a match from the playlist.
 
 ## Frontend (Angular)
 
@@ -219,7 +219,7 @@ The backend follows Clean Architecture principles, separating concerns into dist
     npm install
     ```
 3.  **Configure API URL:**
-    *   Update the `apiUrl` in `frontend/src/environments/environment.ts` and `frontend/src/environments/environment.development.ts` (relative to the project root) to point to your running backend API URL (e.g., `http://localhost:5000`).
+    *   Update the `apiUrl` in `frontend/src/environments/environment.ts` and `frontend/src/environments/environment.development.ts` (relative to the project root) to point to your running backend API URL (e.g., `http://localhost:5008`).
 4.  **Run the development server:**
     ```bash
     ng serve
@@ -259,6 +259,7 @@ This backend API was designed with modern best practices in mind. Here is a summ
 |------------------------------------------|-------------|-------------------------------------------------------------------------------|
 | Model validation                        | ✅ Done     | DTOs use `[Required]`, `[StringLength]`; `[ApiController]` enables validation |
 | Consistent error handling                | ✅ Done     | All controllers use `Problem()` for RFC 7807-compliant error responses        |
+| API Versioning                          | ✅ Done     | API routes are versioned via URL path (e.g., `/api/v1/...`) to allow for future updates and ensure backward compatibility for existing clients.                   |
 | Pagination (Matches & Playlists)         | ✅ Done     | Generic `PaginatedResult<T>` used in both controllers and services            |
 | Integration/unit testing                 | ✅ Done     | Integration tests for AuthController, including model validation              |
 | Rate limiting                           | ✅ Gateway  | Rate limiting is NOT implemented in the API code; it is a gateway concern (e.g., NGINX, Azure API Management, AWS API Gateway) |
@@ -274,6 +275,41 @@ This backend API was designed with modern best practices in mind. Here is a summ
 
 **Caching:**
 - Response caching is enabled for suitable endpoints. Caching strategy (API, gateway, or CDN) should be discussed and tailored to business needs.
+
+For more details, see the technical documentation or contact the maintainers.
+
+## Frontend Design & Best Practices
+
+The Angular frontend is developed with a focus on maintainability, scalability, and performance, adhering to modern web development practices:
+
+| Area                                    | Status       | Details/Notes                                                                                                |
+|------------------------------------------|--------------|--------------------------------------------------------------------------------------------------------------|
+| **Component Architecture**               |              |                                                                                                              |
+| Smart/Presentational Components          | Yes          | Clear separation between container (smart) components handling logic and presentational (dumb) UI components.    |
+| Change Detection Strategy (`OnPush`)     | In Progress  | `OnPush` change detection is beneficial for performance; aim for wider adoption.                             |
+| **State Management (NgRx)**              |              |                                                                                                              |
+| Clear NgRx Pattern (Actions, Reducers, Effects, Selectors) | Yes          | NgRx used for robust and predictable state management following established patterns.                   |
+| Feature States & Modularity              | Yes          | State is organized into feature modules.                                                                       |
+| Immutability                             | Yes          | State updates are handled immutably.                                                                         |
+| **Modularity & Structure**               |              |                                                                                                              |
+| Core, Shared, Feature Modules            | Yes          | Application structured with Core (singleton services), Shared (common UI), and Feature modules.                |
+| Lazy Loading of Features                 | Yes          | Feature modules are lazy-loaded to improve initial application load time.                                    |
+| **Styling Approach**                     |              |                                                                                                              |
+| Tailwind CSS Utility-First               | Yes          | Tailwind CSS used for rapid UI development with a utility-first approach.                                    |
+| Scoped Component Styles                  | Yes          | Styles are encapsulated within components (Angular's default).                                               |
+| **Forms Handling**                       |              |                                                                                                              |
+| Reactive Forms                           | In Progress  | Reactive Forms are suitable for complex forms; assess current usage and expand where beneficial.             |
+| **Asynchronous Operations**              |              |                                                                                                              |
+| RxJS for Async                           | Yes          | RxJS is extensively used for managing asynchronous operations and data streams.                              |
+| **Routing**                              |              |                                                                                                              |
+| Feature-Specific Routing Modules         | Yes          | Each feature module typically defines its own routes.                                                          |
+| Route Guards                             | Yes          | Route guards (e.g., `AuthGuard`) utilized to protect routes.                                                 |
+| **Testing Strategy**                     |              |                                                                                                              |
+| Unit Testing (Karma/Jasmine)             | In Progress  | Components, services, and NgRx store elements are unit-tested. Aim to expand coverage.                       |
+| Mocking Dependencies                     | Yes          | Dependencies are mocked in tests.                                                                            |
+| **Code Quality & Linting**               |              |                                                                                                              |
+| Angular Style Guide Adherence            | Yes          | Code aims to follow Angular community style guides.                                                          |
+| ESLint for Code Consistency              | Yes          | ESLint with `angular-eslint` is used to maintain code quality.                                               |
 
 For more details, see the technical documentation or contact the maintainers.
 
