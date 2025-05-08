@@ -28,6 +28,10 @@ export class MatchCardComponent {
     return MatchUIHelper.isReplay(match);
   }
 
+  isCancelled(match: Match): boolean {
+    return MatchUIHelper.isCancelled(match);
+  }
+
   getLocation(match: Match): string | undefined {
     // Basic implementation copied from previous components
     if (match.competition.includes('at ')) {

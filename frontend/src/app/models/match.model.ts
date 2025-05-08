@@ -36,6 +36,11 @@ export class MatchUIHelper {
     return match.status === MatchStatus.OnDemand;
   }
 
+  // Check if a match is cancelled
+  static isCancelled(match: Match): boolean {
+    return match.status === MatchStatus.Canceled;
+  }
+
   // Generate thumbnail URL based on match data if needed
   static getThumbnail(match: Match): string | undefined {
     return match.thumbnail;
