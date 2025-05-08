@@ -8,7 +8,8 @@ The application  implements Clean Architecture principles for backend developmen
 ## Business Understanding
 
 ### User Experience (UX)
-The Playlist feature makes Clubber TV easier and more fun to use.  Users can save their favorite music, live sets, or interviews and organize them into lists (like  "Chill House Vibes" or "Techno Energy"). This helps them find content faster and enjoy  music that matches their mood or taste. It also lets users share playlists with friends, creating a sense  of community and making the platform feel more personal.
+ The playlists function on Clubber TV maintains user interest and encourages users to stay active on the  application. The platform uses trained machine learning (ML) models to analyze user personas and listening habits which enables  it to provide personalized recommendations that fit individual tastes. The platform benefits from user satisfaction improvement while Clubber  TV gains trend insights to work with popular artists and promote new tracks and events. Playlists enable the  platform to host sponsored content and targeted ads which helps attract sponsors and increase revenue growth.
+
 
 ### Business Benefits
 Playlists help Clubber TV keep  users coming back. When people create or follow playlists, they spend more time on the app, which  means they’re less likely to leave for other platforms. This also gives Clubber TV data about what  users like, so they can recommend better content or work with popular artists. Plus, playlists can be  used to promote new music or events, helping Clubber TV grow its audience and attract sponsors or advertisers.
