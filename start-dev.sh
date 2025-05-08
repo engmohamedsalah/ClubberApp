@@ -45,7 +45,7 @@ cd ..
 
 echo -e "\033[1;32mBoth servers are now running!\033[0m"
 echo -e "\033[1;32mFrontend: http://localhost:4200\033[0m"
-echo -e "\033[1;32mBackend: http://localhost:5000 and https://localhost:5001\033[0m"
+echo -e "\033[1;32mBackend: http://localhost:5008 and https://localhost:7130\033[0m"
 echo -e "\033[1;31mTo stop the servers, run: ./stop-dev.sh\033[0m"
 
 
