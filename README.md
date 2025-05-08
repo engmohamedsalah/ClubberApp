@@ -1,6 +1,6 @@
 # ClubberApp - My Sports Playlist
 
- The web application serves as a solution to the "My Sports Playlist" challenge. Users can register  and log in to view sports matches from a mock source while managing their personal match playlist.
+ The web application serves as a solution to the "My Sports Playlist" challenge. Users can register  and log in to view sports matches from a pre-defined set (seeded into the database) while managing their personal match playlist.
 
 The application  implements Clean Architecture principles for backend development and NgRx state management in its Angular frontend.
 
@@ -12,7 +12,7 @@ The application  implements Clean Architecture principles for backend developmen
 
 
 ### Business Benefits
-Playlists help Clubber TV keep  users coming back. When people create or follow playlists, they spend more time on the app, which  means they’re less likely to leave for other platforms. This also gives Clubber TV data about what  users like, so they can recommend better content or work with popular artists. Plus, playlists can be  used to promote new music or events, helping Clubber TV grow its audience and attract sponsors or advertisers.
+Playlists help Clubber TV keep  users coming back. When people create or follow playlists, they spend more time on the app, which  means they're less likely to leave for other platforms. This also gives Clubber TV data about what  users like, so they can recommend better content or work with popular artists. Plus, playlists can be  used to promote new music or events, helping Clubber TV grow its audience and attract sponsors or advertisers.
  
 
 ## Setup Instructions
@@ -114,8 +114,24 @@ These scripts handle proper process management and provide clear feedback about 
 
 ## Technology Stack
 
-*   **Backend:** .NET 8, C#, ASP.NET Core Web API, Entity Framework Core (for data persistence concept), AutoMapper, Clean Architecture, xUnit, Moq, BCrypt.Net (for password hashing), JWT (for authentication)
-*   **Frontend:** Angular 19, TypeScript, NgRx (Store, Effects, Selectors), Tailwind CSS v3, RxJS, Karma, Jasmine
+This project leverages a modern technology stack to deliver a robust and scalable application:
+
+### Backend Technologies
+*   **Framework & Language:** .NET 8 with C#, ASP.NET Core Web API
+*   **Architecture:** Clean Architecture principles
+*   **Data Persistence:** Entity Framework Core with SQLite for the main application, and an in-memory SQLite database for integration testing.
+*   **API & Utilities:**
+    *   AutoMapper for object-to-object mapping
+    *   JSON Web Tokens (JWT) for secure authentication
+    *   BCrypt.Net for robust password hashing
+*   **Testing:** xUnit (unit testing), Moq (mocking framework)
+
+### Frontend Technologies
+*   **Framework & Language:** Angular (version 19) with TypeScript
+*   **State Management:** NgRx (utilizing Store, Effects, and Selectors)
+*   **Styling:** Tailwind CSS (version 3)
+*   **Reactive Programming:** RxJS
+*   **Testing:** Karma (test runner), Jasmine (testing framework)
 
 ## Backend (.NET)
 
@@ -125,31 +141,32 @@ The backend follows Clean Architecture principles, separating concerns into dist
 
 *   **Domain:** Contains core entities (`User`, `Match`, `Playlist`) and domain logic.
 *   **Application:** Contains application logic, interfaces (repositories, services, unit of work), DTOs, and service implementations.
-*   **Infrastructure:** Provides implementations for interfaces defined in the Application layer, such as repositories using EF Core (conceptual) and potentially external services.
+*   **Infrastructure:** Provides implementations for interfaces defined in the Application layer, such as repositories using EF Core with SQLite, and potentially external services.
 *   **Api:** The ASP.NET Core Web API layer, responsible for handling HTTP requests, routing, controllers, and interacting with the Application layer.
 
 ### Setup & Running
 
 1.  **Navigate to the API directory:**
     ```bash
-    cd /home/ubuntu/clubber_app/backend/ClubberApp.Api
+    # From the project root directory
+    cd backend/ClubberApp.Api
     ```
 2.  **Restore dependencies:**
     ```bash
     dotnet restore ../../ClubberApp.sln
     # The backend/.NET SDK version is pinned by backend/global.json
     ```
-3.  **Database Setup (Conceptual):**
-    *   This implementation uses an in-memory database for simplicity during development and testing. For a production scenario, you would configure a connection string in `appsettings.json` for a persistent database (e.g., PostgreSQL, SQL Server).
-    *   EF Core migrations would be used to manage the database schema:
+3.  **Database Setup:**
+    *   This implementation uses a **SQLite database** for the main application, which is simple to set up for development. Integration tests utilize an **in-memory SQLite database**. For a production scenario, you would typically configure a connection string in `appsettings.json` for a more robust persistent database (e.g., PostgreSQL, SQL Server).
+    *   EF Core migrations are used to manage the database schema:
         ```bash
-        # Add migration (run from Infrastructure project directory or specify with --project)
-        dotnet ef migrations add InitialCreate --startup-project ../ClubberApp.Api
-        # Apply migration (run from Api project directory)
-        dotnet ef database update
+        # To add a new migration (run from the project root, targeting the Infrastructure project):
+        dotnet ef migrations add <MigrationName> --project backend/ClubberApp.Infrastructure --startup-project backend/ClubberApp.Api
+        # To apply migrations to the database (run from the project root):
+        dotnet ef database update --startup-project backend/ClubberApp.Api
         ```
 4.  **JWT Configuration:**
-    *   Update the `JwtSettings` section in `/home/ubuntu/clubber_app/backend/ClubberApp.Api/appsettings.json` with your own secret key, issuer, and audience.
+    *   Update the `JwtSettings` section in `backend/ClubberApp.Api/appsettings.json` (relative to the project root) with your own secret key, issuer, and audience.
     ```json
     "JwtSettings": {
       "Key": "YOUR_VERY_SECURE_SECRET_KEY_HERE_LONGER_THAN_32_BYTES",
@@ -161,19 +178,23 @@ The backend follows Clean Architecture principles, separating concerns into dist
     ```bash
     dotnet run
     ```
-    The API will typically be available at `http://localhost:5000` or `https://localhost:5001` (check console output).
+    The API will typically be available at **`http://localhost:5008`** (for HTTP) and **`https://localhost:7130`** (for HTTPS) when running with `dotnet run`. Always check the console output for the exact URLs.
 
 ### Running Backend Tests
 
-1.  **Navigate to the solution root or tests directory:**
+1.  **Navigate to the project root directory or the backend tests directory:**
     ```bash
-    cd /home/ubuntu/clubber_app
+    # From the project root
+    cd backend/tests/ClubberApp.Api.Tests 
+    # Or, to run all tests in the solution from the project root:
+    # cd . 
     ```
 2.  **Run tests:**
     ```bash
-    dotnet test
+    dotnet test ../../ClubberApp.sln 
+    # Or, if in a specific test project directory: dotnet test
     ```
-    *Note: Some API integration tests might still have compilation errors related to `CustomWebApplicationFactory` accessibility that need resolving.*
+    *Note: Verify the status of API integration tests, particularly any related to `CustomWebApplicationFactory` accessibility, and resolve if necessary.*
 
 ### API Endpoints
 
@@ -190,14 +211,15 @@ The backend follows Clean Architecture principles, separating concerns into dist
 
 1.  **Navigate to the frontend directory:**
     ```bash
-    cd /home/ubuntu/clubber_app/frontend
+    # From the project root directory
+    cd frontend
     ```
 2.  **Install dependencies:**
     ```bash
     npm install
     ```
 3.  **Configure API URL:**
-    *   Update the `apiUrl` in `/home/ubuntu/clubber_app/frontend/src/environments/environment.ts` and `environment.development.ts` to point to your running backend API URL (e.g., `http://localhost:5000`).
+    *   Update the `apiUrl` in `frontend/src/environments/environment.ts` and `frontend/src/environments/environment.development.ts` (relative to the project root) to point to your running backend API URL (e.g., `http://localhost:5000`).
 4.  **Run the development server:**
     ```bash
     ng serve
@@ -208,7 +230,8 @@ The backend follows Clean Architecture principles, separating concerns into dist
 
 1.  **Navigate to the frontend directory:**
     ```bash
-    cd /home/ubuntu/clubber_app/frontend
+    # From the project root directory
+    cd frontend
     ```
 2.  **Run tests:**
     ```bash
@@ -218,15 +241,15 @@ The backend follows Clean Architecture principles, separating concerns into dist
 
 ## Next Steps & Improvements
 
-*   **Implement Real Data Source:** Replace the mock match data source with a real one (e.g., fetch from a third-party API or a database).
-*   **Database Persistence:** Fully implement database persistence using EF Core and a chosen database provider.
-*   **EF Core Migrations:** Implement and manage database schema changes using EF Core migrations.
-*   **API Integration Tests:** Fix the remaining compilation errors in the API integration tests.
+*   **Implement Real Data Source:** While matches are currently seeded, consider replacing this with a dynamic data source (e.g., fetching from a third-party sports API).
+*   **Database Scalability:** For larger-scale production, consider migrating from SQLite to a more robust database server (e.g., PostgreSQL, SQL Server) and implement any advanced EF Core configurations as needed.
+*   **EF Core Migrations:** Continue to use and manage database schema changes effectively using EF Core migrations.
+*   **API Integration Tests:** Ensure all API integration tests are passing and expand coverage.
 *   **Frontend Test Coverage:** Add more comprehensive unit and integration tests for the frontend components, services, and NgRx store.
-*   **Error Handling:** Enhance error handling on both backend and frontend.
-*   **UI/UX:** Improve the user interface and user experience.
-*   **Security:** Implement more robust security measures (e.g., input validation, rate limiting, HTTPS enforcement).
-*   **Deployment:** Create build pipelines and deployment scripts.
+*   **Error Handling:** Enhance error handling consistently across both backend and frontend, providing user-friendly feedback.
+*   **UI/UX:** Iteratively improve the user interface and user experience based on feedback and best practices.
+*   **Security:** Implement further security measures (e.g., more granular input validation, rate limiting at the gateway, HTTPS enforcement in production).
+*   **Deployment:** Create robust build pipelines and deployment scripts for various environments.
 
 ## API Design & Best Practices
 
