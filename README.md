@@ -4,6 +4,33 @@ This project is a web application built to fulfill the "My Sports Playlist" chal
 
 The application follows Clean Architecture principles for the backend and utilizes NgRx for state management in the Angular frontend.
 
+## Business Understanding
+
+The Playlist feature significantly enhances the Clubber TV user experience by empowering viewers to curate their personalized sports content libraries. Instead of sifting through extensive schedules or relying on generic recommendations, users can instantly save upcoming or on-demand matches they're interested in, ensuring they never miss out on preferred events and can easily access their chosen content at their convenience, fostering greater engagement and platform loyalty.
+
+## Setup Instructions
+
+For a quick start with both frontend and backend development environments, use the `start-dev.sh` script located in the project root:
+```bash
+./start-dev.sh
+```
+For detailed setup instructions for the backend and frontend, please refer to their respective sections further down in this README:
+*   [Backend Setup & Running](#backend-net)
+*   [Frontend Setup & Running](#frontend-angular)
+
+## API Documentation
+
+The backend provides a RESTful API for user authentication, managing matches, and handling playlists. Key endpoints include:
+
+*   `POST /api/Auth/register`: Register a new user.
+*   `POST /api/Auth/login`: Log in an existing user, returns JWT.
+*   `GET /api/Matches`: Get available matches (supports filtering and pagination).
+*   `GET /api/Playlist`: Get the authenticated user's playlist.
+*   `POST /api/Playlist/{matchId}`: Add a match to the user's playlist.
+*   `DELETE /api/Playlist/{matchId}`: Remove a match from the user's playlist.
+
+For more details on request/response formats and parameters, please refer to the [API Endpoints](#api-endpoints) section and the backend controller source code in `backend/ClubberApp.Api/Controllers/`.
+
 ## Development Scripts
 
 For easier development, use these convenient scripts from the project root:
@@ -28,6 +55,38 @@ These scripts handle proper process management and provide clear feedback about 
 /clubber_app
 ├── frontend/         # Angular Frontend Application
 │   ├── src/
+│   │   └── app/      # Main application code
+│   │       ├── core/         # Core module (singleton services, guards, interceptors)
+│   │       │   └── services/   # e.g., auth.service.ts, logger.service.ts
+│   │       │   └── guards/     # e.g., auth.guard.ts
+│   │       │   └── interceptors/ # e.g., jwt.interceptor.ts
+│   │       │   └── core.module.ts
+│   │       ├── shared/       # Shared module (common components, directives, pipes)
+│   │       │   └── components/ # e.g., loading-spinner.component.ts
+│   │       │   └── pipes/      # e.g., custom-date.pipe.ts
+│   │       │   └── directives/ # e.g., highlight.directive.ts
+│   │       │   └── shared.module.ts
+│   │       ├── features/     # Feature modules (grouped by application feature)
+│   │       │   ├── auth/       # Authentication feature
+│   │       │   │   ├── components/ # e.g., login.component.ts, register.component.ts
+│   │       │   │   ├── store/      # NgRx state for auth
+│   │       │   │   └── auth.module.ts
+│   │       │   ├── matches/    # Matches feature
+│   │       │   │   ├── components/ # e.g., match-list.component.ts, match-item.component.ts
+│   │       │   │   ├── services/   # e.g., matches.service.ts (if feature-specific)
+│   │       │   │   ├── store/      # NgRx state for matches
+│   │       │   │   └── matches.module.ts
+│   │       │   └── playlist/   # Playlist feature
+│   │       │       ├── components/ # e.g., playlist-view.component.ts
+│   │       │       ├── store/      # NgRx state for playlist
+│   │       │       └── playlist.module.ts
+│   │       ├── store/        # Root NgRx store setup
+│   │       │   └── index.ts    # Root reducers, meta-reducers
+│   │       ├── app-routing.module.ts
+│   │       └── app.module.ts
+│   │       └── app.component.ts
+│   ├── assets/       # Static assets (images, fonts, etc.)
+│   ├── environments/ # Environment configuration
 │   ├── angular.json
 │   ├── package.json
 │   └── tsconfig.json
