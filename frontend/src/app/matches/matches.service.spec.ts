@@ -24,7 +24,7 @@ describe("MatchesService", () => {
         MatchesService,
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideMockStore({ initialState }),
+        provideMockStore({ initialState })
       ]
     });
     service = TestBed.inject(MatchesService);
@@ -40,7 +40,7 @@ describe("MatchesService", () => {
   });
 
   // Test loadMatches and matches$ observable
-  it("should load matches and emit them through matches$ observable", (done) => {
+  it("should load matches and emit them through matches$ observable", (done: any) => {
     // Ensure that matches$ emits after loadMatches is called
     service.matches$.pipe(first()).subscribe((matches: Match[]) => {
       expect(matches).toBeDefined();
@@ -50,15 +50,30 @@ describe("MatchesService", () => {
 
     // Call loadMatches to trigger the observable
     service.loadMatches();
+
+    // Expect the HTTP request and flush a response
+    const req = httpTestingController.expectOne(req => req.method === 'GET');
+    req.flush([]); // Respond with an empty array or mock data as needed
   });
 
   // Test the filterMatches method
   it("should filter matches by Live status", () => {
     // Call the method to test
     service.filterMatches('Live');
+
     // Validate service state is correct
     expect(service.loading$).toBeDefined();
     expect(service.error$).toBeDefined();
+
+    // Get any pending requests
+    const requests = httpTestingController.match(req => req.method === 'GET');
+
+    // If we found any requests, flush them
+    if (requests.length > 0) {
+      requests.forEach(req => {
+        req.flush([]);
+      });
+    }
   });
 });
 

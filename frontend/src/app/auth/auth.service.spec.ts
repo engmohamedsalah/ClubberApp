@@ -1,18 +1,12 @@
-import { TestBed } from "@angular/core/testing";
-import { provideHttpClientTesting } from "@angular/common/http/testing";
-import { provideHttpClient } from "@angular/common/http";
-import { provideMockStore } from "@ngrx/store/testing";
-import { AuthService } from "./auth.service";
-import { AppState } from "../store/reducers";
+import { TestBed } from '@angular/core/testing';
+import { AuthService } from './auth.service';
+import { provideMockStore } from '@ngrx/store/testing';
+import { Router } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
-
-describe("AuthService", () => {
+describe('AuthService', () => {
   let service: AuthService;
-  const initialState: AppState = {
-    auth: { user: null, token: null, loading: false, error: null },
-    matches: { matches: [], loading: false, error: null },
-    playlist: { playlist: null, loading: false, error: null }
-  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -20,7 +14,10 @@ describe("AuthService", () => {
         AuthService,
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideMockStore({ initialState }),
+        provideMockStore({
+          initialState: { auth: { user: null, token: null, loading: false, error: null } }
+        }),
+        { provide: Router, useValue: { navigate: () => ({}) } }
       ]
     });
     service = TestBed.inject(AuthService);

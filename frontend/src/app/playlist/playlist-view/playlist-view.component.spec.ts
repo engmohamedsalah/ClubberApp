@@ -1,145 +1,122 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { provideMockStore, MockStore } from "@ngrx/store/testing";
-import { PlaylistViewComponent } from "./playlist-view.component";
-import { AppState } from "../../store/reducers";
-import { Playlist } from "../../models/playlist.model";
-import * as PlaylistActions from "../../store/actions/playlist.actions";
-// Correct import for selector
-import { selectUserPlaylist, selectPlaylistLoading } from "../../store/selectors/playlist.selectors";
 import { CommonModule } from "@angular/common";
 import { RouterTestingModule } from "@angular/router/testing";
 import { By } from "@angular/platform-browser";
-import { MemoizedSelector } from "@ngrx/store";
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ActivatedRoute, provideRouter } from '@angular/router';
+import { PlaylistService } from '../playlist.service';
+import { BehaviorSubject, of } from 'rxjs';
+import { PlaylistViewComponent } from './playlist-view.component';
+import { MatchStatus, MatchAvailability } from '../../models/match.model';
+import { provideMockStore } from '@ngrx/store/testing';
+import { provideHttpClient } from '@angular/common/http';
+
+type SpyFunction = ((...args: unknown[]) => void) & { calls: unknown[][] };
 
 describe("PlaylistViewComponent", () => {
   let component: PlaylistViewComponent;
   let fixture: ComponentFixture<PlaylistViewComponent>;
-  let store: MockStore<AppState>;
-  let mockSelectUserPlaylist: MemoizedSelector<AppState, Playlist | null>; // Renamed variable
-  let mockSelectPlaylistLoading: MemoizedSelector<AppState, boolean>;
-
-  // Correct initial state without isAuthenticated
-  const initialState: AppState = {
-    auth: { user: null, token: null, loading: false, error: null }, // Assume authenticated by presence of token/user if needed
-    matches: { matches: [], loading: false, error: null },
-    playlist: { playlist: null, loading: false, error: null }
+  let playlistService: {
+    loadPlaylist: SpyFunction;
+    removeFromPlaylist: SpyFunction;
+    filterPlaylist: SpyFunction;
+    clearNotification: SpyFunction;
+    playlist$: unknown;
+    loading$: unknown;
+    error$: unknown;
+    notification$: unknown;
   };
+  let playlistSubject: BehaviorSubject<unknown[]>;
+  let loadingSubject: BehaviorSubject<boolean>;
+  let errorSubject: BehaviorSubject<string | null>;
+  let notificationSubject: BehaviorSubject<unknown>;
 
   beforeEach(async () => {
+    function createSpy(): SpyFunction {
+      const fn = ((...args: unknown[]) => { fn.calls.push(args); }) as SpyFunction;
+      fn.calls = [];
+      return fn;
+    }
+    playlistSubject = new BehaviorSubject<unknown[]>([]);
+    loadingSubject = new BehaviorSubject<boolean>(false);
+    errorSubject = new BehaviorSubject<string | null>(null);
+    notificationSubject = new BehaviorSubject<unknown>(null);
+    const playlistServiceSpy = {
+      loadPlaylist: createSpy(),
+      removeFromPlaylist: createSpy(),
+      filterPlaylist: createSpy(),
+      clearNotification: createSpy(),
+      playlist$: playlistSubject.asObservable(),
+      loading$: loadingSubject.asObservable(),
+      error$: errorSubject.asObservable(),
+      notification$: notificationSubject.asObservable()
+    };
     await TestBed.configureTestingModule({
       imports: [
-        PlaylistViewComponent, // Import standalone component
+        PlaylistViewComponent,
         CommonModule,
-        RouterTestingModule
+        RouterTestingModule,
+        HttpClientTestingModule
       ],
       providers: [
-        provideMockStore({ initialState }),
+        provideRouter([]),
+        provideHttpClient(),
+        { provide: PlaylistService, useValue: playlistServiceSpy },
+        { provide: ActivatedRoute, useValue: { params: of({ id: '123' }) } },
+        provideMockStore({
+          initialState: {
+            auth: { isAuthenticated: true }
+          }
+        })
       ]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(PlaylistViewComponent);
     component = fixture.componentInstance;
-    store = TestBed.inject(MockStore);
-
-    // Setup mock selectors with correct names
-    mockSelectUserPlaylist = store.overrideSelector(selectUserPlaylist, null);
-    mockSelectPlaylistLoading = store.overrideSelector(selectPlaylistLoading, false);
-
-    spyOn(store, "dispatch"); // Spy on dispatch before initial detectChanges
-
-    fixture.detectChanges(); // Trigger ngOnInit
+    playlistService = playlistServiceSpy;
+    fixture.detectChanges();
   });
 
   it("should create", () => {
     expect(component).toBeTruthy();
   });
 
-  it("should dispatch loadPlaylist action on init", () => {
-    expect(store.dispatch).toHaveBeenCalledWith(PlaylistActions.loadPlaylist());
+  it("should call loadPlaylist on init", () => {
+    expect(playlistService.loadPlaylist.calls.length).toBeGreaterThan(0);
   });
 
-  it("should display loading indicator when loading is true", () => {
-    mockSelectPlaylistLoading.setResult(true);
-    store.refreshState();
+  it("should show loading spinner when loading is true", () => {
+    loadingSubject.next(true);
     fixture.detectChanges();
-
-    const loadingElement = fixture.debugElement.query(By.css("p"));
-    expect(loadingElement).toBeTruthy();
-    expect(loadingElement.nativeElement.textContent).toContain("Loading playlist...");
+    const spinner = fixture.debugElement.query(By.css('app-loading-spinner'));
+    expect(spinner).toBeTruthy();
   });
 
-  it("should display playlist matches when loading is false and playlist exists", () => {
-    // Use correct Match properties (id as string, title, competition)
-    const mockPlaylist: Playlist = {
-      matches: [
-        { id: "guid1", title: "Match 1", competition: "Comp A", date: new Date(), status: "Live" },
-        { id: "guid2", title: "Match 2", competition: "Comp B", date: new Date(), status: "Replay" }
-      ]
-    };
-    mockSelectUserPlaylist.setResult(mockPlaylist);
-    mockSelectPlaylistLoading.setResult(false);
-    store.refreshState();
+  it("should show match cards when matches exist", () => {
+    playlistSubject.next([
+      { id: '1', title: 'Match 1', competition: 'Comp A', date: new Date(), status: MatchStatus.OnDemand, availability: MatchAvailability.Available, streamURL: '' },
+      { id: '2', title: 'Match 2', competition: 'Comp B', date: new Date(), status: MatchStatus.OnDemand, availability: MatchAvailability.Available, streamURL: '' }
+    ]);
     fixture.detectChanges();
-
-    const matchElements = fixture.debugElement.queryAll(By.css("li"));
-    expect(matchElements.length).toBe(2);
-    expect(matchElements[0].nativeElement.textContent).toContain("Match 1");
-    expect(matchElements[1].nativeElement.textContent).toContain("Match 2");
-
-    const loadingElement = fixture.debugElement.query(By.css("p"));
-    expect(loadingElement).toBeFalsy(); // No loading indicator
+    const cards = fixture.debugElement.queryAll(By.css('app-match-card'));
+    expect(cards.length).toBe(2);
   });
 
-  it("should display 'Playlist is empty' when loading is false and playlist has no matches", () => {
-    const mockPlaylist: Playlist = { matches: [] };
-    mockSelectUserPlaylist.setResult(mockPlaylist);
-    mockSelectPlaylistLoading.setResult(false);
-    store.refreshState();
+  it("should show empty state when playlist is empty", () => {
+    playlistSubject.next([]);
     fixture.detectChanges();
-
-    const emptyPlaylistElement = fixture.debugElement.query(By.css("p"));
-    expect(emptyPlaylistElement).toBeTruthy();
-    expect(emptyPlaylistElement.nativeElement.textContent).toContain("Playlist is empty.");
-
-    const matchElements = fixture.debugElement.queryAll(By.css("li"));
-    expect(matchElements.length).toBe(0);
+    const emptyHeader = fixture.debugElement.query(By.css('h3'));
+    expect(emptyHeader.nativeElement.textContent).toContain('Your playlist is empty');
   });
 
-   it("should display 'Playlist not found' when loading is false and playlist is null", () => {
-    mockSelectUserPlaylist.setResult(null);
-    mockSelectPlaylistLoading.setResult(false);
-    store.refreshState();
+  it("should call removeFromPlaylist when remove event is emitted", () => {
+    playlistSubject.next([
+      { id: '1', title: 'Match 1', competition: 'Comp A', date: new Date(), status: MatchStatus.OnDemand, availability: MatchAvailability.Available, streamURL: '' }
+    ]);
     fixture.detectChanges();
-
-    const notFoundElement = fixture.debugElement.query(By.css("p"));
-    expect(notFoundElement).toBeTruthy();
-    expect(notFoundElement.nativeElement.textContent).toContain("Playlist not found or failed to load.");
-
-    const matchElements = fixture.debugElement.queryAll(By.css("li"));
-    expect(matchElements.length).toBe(0);
-  });
-
-  it("should dispatch removeMatchFromPlaylist action when 'Remove' button is clicked", () => {
-     // Use correct Match properties
-     const matchIdToRemove = "guid1";
-     const mockPlaylist: Playlist = {
-      matches: [
-        { id: matchIdToRemove, title: "Match 1", competition: "Comp A", date: new Date(), status: "Live" }
-      ]
-    };
-    mockSelectUserPlaylist.setResult(mockPlaylist);
-    mockSelectPlaylistLoading.setResult(false);
-    store.refreshState();
-    fixture.detectChanges();
-
-    const removeButton = fixture.debugElement.query(By.css("button"));
-    expect(removeButton).toBeTruthy();
-
-    removeButton.triggerEventHandler("click", null);
-
-    // Ensure matchId is passed correctly (as string)
-    expect(store.dispatch).toHaveBeenCalledWith(PlaylistActions.removeMatchFromPlaylist({ matchId: matchIdToRemove }));
+    const card = fixture.debugElement.query(By.css('app-match-card'));
+    card.triggerEventHandler('removeFromPlaylist', '1');
+    expect(playlistService.removeFromPlaylist.calls[0][0]).toBe('1');
   });
 
 });
