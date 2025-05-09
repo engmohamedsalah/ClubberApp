@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using ClubberApp.Application.Interfaces.Services;
 
 // Alias for Domain Match to avoid ambiguity with Moq.Match
 using DomainMatch = ClubberApp.Domain.Entities.Match;
@@ -23,6 +24,7 @@ public class PlaylistServiceTests
     private readonly Mock<IPlaylistRepository> _mockPlaylistRepository;
     private readonly Mock<IMatchRepository> _mockMatchRepository;
     private readonly Mock<IMapper> _mockMapper;
+    private readonly Mock<IStreamUrlService> _mockStreamUrlService;
     private readonly PlaylistService _playlistService;
 
     public PlaylistServiceTests()
@@ -31,12 +33,13 @@ public class PlaylistServiceTests
         _mockPlaylistRepository = new Mock<IPlaylistRepository>();
         _mockMatchRepository = new Mock<IMatchRepository>();
         _mockMapper = new Mock<IMapper>();
+        _mockStreamUrlService = new Mock<IStreamUrlService>();
 
         // Setup UnitOfWork to return mocked repositories
         _mockUnitOfWork.Setup(uow => uow.PlaylistRepository).Returns(_mockPlaylistRepository.Object);
         _mockUnitOfWork.Setup(uow => uow.MatchRepository).Returns(_mockMatchRepository.Object);
 
-        _playlistService = new PlaylistService(_mockUnitOfWork.Object, _mockMapper.Object);
+        _playlistService = new PlaylistService(_mockUnitOfWork.Object, _mockMapper.Object, _mockStreamUrlService.Object);
 
         // Setup AutoMapper mock
         _mockMapper.Setup(m => m.Map<IEnumerable<MatchDto>>(It.IsAny<IEnumerable<DomainMatch>>())) // Use alias

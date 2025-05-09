@@ -5,7 +5,7 @@ import { Observable, Subscription } from 'rxjs';
 import { Match, MatchUIHelper } from '../../models/match.model';
 import { MatchesService } from '../matches.service';
 import { PlaylistService } from '../../playlist/playlist.service';
-import { NotificationComponent } from '../../shared';
+import { NotificationComponent, ErrorDisplayComponent, LoadingSpinnerComponent, PaginationControlsComponent } from '../../shared';
 import { PaginatedResult, PaginationHelper } from '../../models/pagination.model';
 import { LoggingService } from '../../core/services/logging.service';
 import { MatchCardComponent } from '../../shared/components/match-card/match-card.component';
@@ -13,7 +13,15 @@ import { MatchCardComponent } from '../../shared/components/match-card/match-car
 @Component({
   selector: 'app-matches-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, NotificationComponent, MatchCardComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    NotificationComponent,
+    MatchCardComponent,
+    ErrorDisplayComponent,
+    LoadingSpinnerComponent,
+    PaginationControlsComponent
+  ],
   templateUrl: './matches-list.component.html',
   styleUrls: ['./matches-list.component.css']
 })

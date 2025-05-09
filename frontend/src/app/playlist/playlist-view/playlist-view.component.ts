@@ -4,13 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { Observable, Subscription } from 'rxjs';
 import { Match, MatchUIHelper } from '../../models/match.model';
 import { PlaylistService } from '../playlist.service';
-import { NotificationComponent } from '../../shared';
+import { NotificationComponent, ErrorDisplayComponent, LoadingSpinnerComponent } from '../../shared';
 import { MatchCardComponent } from '../../shared/components/match-card/match-card.component';
 
 @Component({
   selector: 'app-playlist-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, NotificationComponent, MatchCardComponent],
+  imports: [CommonModule, FormsModule, NotificationComponent, MatchCardComponent, ErrorDisplayComponent, LoadingSpinnerComponent],
   templateUrl: './playlist-view.component.html',
   styleUrls: ['./playlist-view.component.css']
 })

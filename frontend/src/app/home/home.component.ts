@@ -5,11 +5,12 @@ import { MatchesService } from '../matches/matches.service';
 import { PlaylistService } from '../playlist/playlist.service';
 import { AuthService } from '../auth/auth.service';
 import { Match } from '../models/match.model';
+import { ErrorDisplayComponent, LoadingSpinnerComponent } from '../shared';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, ErrorDisplayComponent, LoadingSpinnerComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })

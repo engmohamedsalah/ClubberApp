@@ -1,0 +1,42 @@
+<div *ngIf="result && result.data && result.data.length > 0" class="mt-8 flex justify-center">
+  <nav class="flex items-center space-x-1">
+    <!-- Previous Page Button -->
+    <button
+      (click)="prevPage()"
+      [disabled]="currentPage === 1"
+      [ngClass]="{'text-gray-500 cursor-not-allowed': currentPage === 1, 'text-indigo-400 hover:text-indigo-300': currentPage > 1}"
+      class="p-2 rounded-md focus:outline-none">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+      </svg>
+    </button>
+
+    <!-- Page Numbers -->
+    <div class="flex space-x-1">
+      <button
+        *ngFor="let page of getPageNumbers(result)"
+        (click)="goToPage(page)"
+        [ngClass]="{'bg-indigo-600 text-white': currentPage === page, 'bg-gray-800 text-gray-300 hover:bg-gray-700': currentPage !== page}"
+        class="px-3 py-1 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800">
+        {{ page }}
+      </button>
+    </div>
+
+    <!-- Next Page Button -->
+    <button
+      (click)="nextPage()"
+      [disabled]="currentPage === getTotalPages(result)"
+      [ngClass]="{'text-gray-500 cursor-not-allowed': currentPage === getTotalPages(result), 'text-indigo-400 hover:text-indigo-300': currentPage < getTotalPages(result)}"
+      class="p-2 rounded-md focus:outline-none">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+      </svg>
+    </button>
+  </nav>
+</div>
+
+<!-- Pagination Info -->
+<div *ngIf="result && result.data && result.data.length > 0" class="mt-2 text-center text-gray-400 text-sm">
+  Page {{ result.page }} of {{ getTotalPages(result) }} |
+  Showing {{ result.data.length }} of {{ result.totalCount }} items
+</div>

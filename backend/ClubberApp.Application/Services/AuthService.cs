@@ -72,6 +72,35 @@ public class AuthService : IAuthService
         return new AuthResponseDto { Succeeded = true, Message = "Login successful.", Token = token, User = userDto };
     }
 
+    public async Task<UserDto?> GetUserByIdAsync(Guid userId)
+    {
+        var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+        return user == null ? null : _mapper.Map<UserDto>(user);
+    }
+
+    public async Task<UserDto?> UpdateUserProfileAsync(Guid userId, UserProfileUpdateDto updateDto)
+    {
+        var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+        if (user == null) return null;
+        user.Username = updateDto.Username;
+        user.Email = updateDto.Email;
+        _unitOfWork.UserRepository.Update(user);
+        await _unitOfWork.SaveChangesAsync();
+        return _mapper.Map<UserDto>(user);
+    }
+
+    public async Task<bool> ChangePasswordAsync(Guid userId, ChangePasswordDto dto)
+    {
+        var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+        if (user == null) return false;
+        if (!BCrypt.Net.BCrypt.Verify(dto.OldPassword, user.PasswordHash)) return false;
+        if (dto.NewPassword != dto.ConfirmPassword) return false;
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        _unitOfWork.UserRepository.Update(user);
+        await _unitOfWork.SaveChangesAsync();
+        return true;
+    }
+
     private string GenerateJwtToken(User user)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
