@@ -54,17 +54,12 @@ public class MatchService : IMatchService
     public async Task<MatchDto> CreateMatchAsync(MatchDto matchDto)
     {
         var match = _mapper.Map<Match>(matchDto);
-        
-        // Generate StreamURL if not provided
         if (string.IsNullOrEmpty(match.StreamURL))
         {
             match.StreamURL = _streamUrlService.GenerateStreamUrl(match);
         }
-        
         await _unitOfWork.MatchRepository.AddAsync(match);
         await _unitOfWork.SaveChangesAsync();
-        
-        // Set the generated ID
         matchDto.Id = match.Id;
         return matchDto;
     }
@@ -74,17 +69,12 @@ public class MatchService : IMatchService
     {
         var match = await _unitOfWork.MatchRepository.GetByIdAsync(id);
         if (match == null) return false;
-
-        // Ensure the ID is set correctly
         matchDto.Id = id;
         _mapper.Map(matchDto, match);
-        
-        // Generate StreamURL if not provided
         if (string.IsNullOrEmpty(match.StreamURL))
         {
             match.StreamURL = _streamUrlService.GenerateStreamUrl(match);
         }
-        
         _unitOfWork.MatchRepository.Update(match);
         await _unitOfWork.SaveChangesAsync();
         return true;
@@ -94,7 +84,6 @@ public class MatchService : IMatchService
     {
         var match = await _unitOfWork.MatchRepository.GetByIdAsync(id);
         if (match == null) return false;
-
         _unitOfWork.MatchRepository.Delete(match);
         await _unitOfWork.SaveChangesAsync();
         return true;

@@ -4,6 +4,10 @@ using ClubberApp.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using System.Text.Json;
+using System.Threading;
+using ClubberApp.Api.Sse;
 
 namespace ClubberApp.Api.Controllers.v1;
 
@@ -75,6 +79,41 @@ public class MatchesController : ControllerBase
     {
         var paginated = await _matchService.SearchMatchesPaginatedAsync(null, MatchStatus.Live, 1, 100, sortBy, sortDescending);
         return Ok(paginated.Data); // Return just the list for compatibility with tests
+    }
+
+    // SSE endpoint for real-time match updates
+    [AllowAnonymous]
+    [HttpGet("stream")]
+    public async Task StreamMatches(CancellationToken cancellationToken)
+    {
+        Response.Headers.Add("Content-Type", "text/event-stream");
+        await SseMatchNotifier.Instance.RegisterClientAsync(Response, cancellationToken);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateMatch([FromBody] MatchDto matchDto)
+    {
+        var created = await _matchService.CreateMatchAsync(matchDto);
+        await SseMatchNotifier.Instance.BroadcastMatchEventAsync(new { type = "add", match = created });
+        return Ok(created);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateMatch(Guid id, [FromBody] MatchDto matchDto)
+    {
+        var success = await _matchService.UpdateMatchAsync(id, matchDto);
+        if (!success) return NotFound();
+        await SseMatchNotifier.Instance.BroadcastMatchEventAsync(new { type = "update", match = matchDto });
+        return Ok(matchDto);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteMatch(Guid id)
+    {
+        var success = await _matchService.DeleteMatchAsync(id);
+        if (!success) return NotFound();
+        await SseMatchNotifier.Instance.BroadcastMatchEventAsync(new { type = "delete", matchId = id });
+        return NoContent();
     }
 
     // Add other endpoints if needed (e.g., POST for creating matches - not required by spec)

@@ -43,6 +43,7 @@ export class MatchesListComponent implements OnInit, OnDestroy {
 
   private searchTimeout?: ReturnType<typeof setTimeout>;
   private subscriptions: Subscription[] = [];
+  private sseSubscription?: Subscription;
 
   constructor(
     private matchesService: MatchesService,
@@ -57,12 +58,30 @@ export class MatchesListComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Load paginated matches initially
+    // Subscribe to SSE for real-time updates
+    this.sseSubscription = this.matchesService.getMatchesStream().subscribe({
+      next: (matches) => {
+        // Update the matches and paginatedResult subjects for real-time UI
+        this.matchesService["matchesSubject"].next(matches);
+        this.matchesService["paginatedResultSubject"].next({
+          data: matches,
+          page: 1,
+          pageSize: matches.length > 0 ? matches.length : 10,
+          totalCount: matches.length
+        });
+      },
+      error: (err) => {
+        this.loggingService.logError('SSE error in MatchesListComponent', err);
+      }
+    });
+    // Optionally, also load paginated matches initially for fallback
     this.loadPaginatedMatches();
   }
 
   ngOnDestroy(): void {
-    // Clean up subscriptions to prevent memory leaks
+    if (this.sseSubscription) {
+      this.sseSubscription.unsubscribe();
+    }
     this.subscriptions.forEach(sub => sub.unsubscribe());
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);

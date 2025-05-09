@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, timer } from 'rxjs';
-import { catchError, switchMap, tap, map, retry } from 'rxjs/operators';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { catchError, tap, map, retry } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Match, MatchStatus } from '../models/match.model';
 import { PaginatedResult } from '../models/pagination.model';
@@ -41,7 +41,8 @@ export class MatchesService {
   constructor(
     private apiService: ApiService,
     private loggingService: LoggingService,
-    private featureFlagService: FeatureFlagService
+    private featureFlagService: FeatureFlagService,
+    private zone: NgZone // Needed for EventSource
   ) {
     // Configure API endpoint from environment
     this.ENDPOINT = `${environment.apiUrl}/Matches`;
@@ -49,40 +50,7 @@ export class MatchesService {
     // Initialize PaginationAdapter with LoggingService
     PaginationAdapter.initialize(this.loggingService);
 
-    // Log the auto-refresh interval value before checking it
-    this.loggingService.logInfo('[MatchesService] Checking auto-refresh interval. Value:', environment.autoRefreshInterval);
-
-    // Set up auto-refresh if enabled
-    if (environment.autoRefreshInterval > 0) {
-      this.loggingService.logInfo('[MatchesService] Setting up auto-refresh timer with interval:', environment.autoRefreshInterval);
-      timer(0, environment.autoRefreshInterval)
-        .pipe(
-          tap(() => this.loggingService.logInfo('[MatchesService] Auto-refresh triggered. Fetching matches...')),
-          switchMap(() => this.fetchMatches()),
-          tap(matches => {
-            const matchesArray = Array.isArray(matches) ? matches : [];
-            this.matchesSubject.next(matchesArray);
-            this.loggingService.logInfo('[MatchesService] Auto-refresh successfully updated matchesSubject with:', matchesArray);
-
-            // Also update paginatedResultSubject for UI that binds to it
-            // This is a simplified PaginatedResult based on the non-paginated fetch
-            const refreshedPaginatedResult: PaginatedResult<Match> = {
-              data: matchesArray,
-              page: 1, // Assuming this refresh is like viewing the first page
-              pageSize: matchesArray.length > 0 ? matchesArray.length : 10, // Or a default
-              totalCount: matchesArray.length // Total count is just the current array length
-            };
-            this.paginatedResultSubject.next(refreshedPaginatedResult);
-            this.loggingService.logInfo('[MatchesService] Auto-refresh also updated paginatedResultSubject with:', refreshedPaginatedResult);
-          })
-        )
-        .subscribe({
-          next: () => { /* Subjects are updated in the tap operator */ },
-          error: (err) => this.loggingService.logError('[MatchesService] Error in auto-refresh timer observable:', err)
-        });
-    } else {
-      this.loggingService.logInfo('[MatchesService] Auto-refresh is disabled (interval <= 0).');
-    }
+    // Remove auto-refresh logic: SSE now handles real-time updates
   }
 
   // Load all matches, with optional filter (non-paginated for backward compatibility)
@@ -480,5 +448,54 @@ export class MatchesService {
   // Mock data methods removed as isUsingRealBackend is now always true
   // private getMockMatches(): Match[] { ... }
   // private getMockPaginatedResult(page: number, pageSize: number): PaginatedResult<Match> { ... }
+
+  /**
+   * Subscribe to real-time match updates using SSE (add, update, delete events).
+   */
+  getMatchesStream(): Observable<Match[]> {
+    return new Observable(observer => {
+      const eventSource = new EventSource(`${environment.apiUrl}/Matches/stream`);
+      eventSource.onmessage = event => {
+        this.zone.run(() => {
+          try {
+            const msg = JSON.parse(event.data);
+            console.info('[SSE] Received event:', msg); // Log at info level
+            let matches = this.matchesSubject.getValue().slice(); // Copy current matches
+            if (msg.type === 'add' && msg.match) {
+              const matchObj = MatchAdapter.fromApi(msg.match);
+              if (!matches.find(m => m.id === matchObj.id)) {
+                matches.push(matchObj);
+              }
+            } else if (msg.type === 'update' && msg.match) {
+              const matchObj = MatchAdapter.fromApi(msg.match);
+              const idx = matches.findIndex(m => m.id === matchObj.id);
+              if (idx !== -1) {
+                matches[idx] = matchObj;
+              }
+            } else if (msg.type === 'delete' && msg.matchId) {
+              matches = matches.filter(m => m.id !== msg.matchId);
+            }
+            this.matchesSubject.next(matches);
+            this.paginatedResultSubject.next({
+              data: matches,
+              page: 1,
+              pageSize: matches.length > 0 ? matches.length : 10,
+              totalCount: matches.length
+            });
+            observer.next(matches);
+          } catch (e) {
+            this.loggingService.logError('Error parsing SSE match event', e);
+          }
+        });
+      };
+      eventSource.onerror = error => {
+        this.zone.run(() => {
+          observer.error(error);
+        });
+        eventSource.close();
+      };
+      return () => eventSource.close();
+    });
+  }
 }
 

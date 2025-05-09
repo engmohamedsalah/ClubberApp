@@ -24,7 +24,12 @@ namespace ClubberApp.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An unhandled exception occurred.");
+                // Ignore TaskCanceledException and OperationCanceledException (common for streaming endpoints)
+                if (ex is TaskCanceledException || ex is OperationCanceledException)
+                {
+                    _logger.LogDebug("SSE or streaming client disconnected: {Path}", context.Request.Path);
+                    return;
+                }
                 await HandleExceptionAsync(context, ex);
             }
         }

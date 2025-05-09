@@ -55,10 +55,9 @@ export class MatchAdapter {
    * @param dto - The data transfer object from the backend
    * @returns - A frontend Match model with properly formatted data
    */
-  static fromApi(dto: MatchDto): Match {
-    if (!dto) {
-      console.error('Received undefined or null dto in MatchAdapter.fromApi');
-      // Return a default Match object with empty values
+  static fromApi(dto: unknown): Match {
+    if (!dto || typeof dto !== 'object') {
+      console.error('Received undefined, null, or non-object dto in MatchAdapter.fromApi');
       return {
         id: '',
         title: '',
@@ -67,22 +66,25 @@ export class MatchAdapter {
         status: MatchStatus.Upcoming,
         availability: MatchAvailability.Unavailable,
         streamURL: '',
-        thumbnail: undefined, // Ensure thumbnail is part of the default return
-        location: undefined // Ensure location is part of the default return
+        thumbnail: undefined,
+        location: undefined
       };
     }
-
-    // Use standalone functions instead of class methods to avoid 'this' context issues
+    const d = dto as Record<string, unknown>;
+    function getStr(key: string): string {
+      const val = d[key];
+      return typeof val === 'string' ? val : '';
+    }
     return {
-      id: dto.id || '',
-      title: dto.title || '',
-      competition: dto.competition || '',
-      date: dto.date ? new Date(dto.date) : new Date(), // Convert ISO string to Date object
-      status: mapMatchStatus(dto.status),
-      availability: mapMatchAvailability(dto.availability),
-      streamURL: dto.streamURL || '',
-      thumbnail: dto.thumbnail || undefined, // Map thumbnail
-      location: dto.location || undefined // Map location
+      id: getStr('id') || getStr('Id'),
+      title: getStr('title') || getStr('Title'),
+      competition: getStr('competition') || getStr('Competition'),
+      date: getStr('date') ? new Date(getStr('date')) : (getStr('Date') ? new Date(getStr('Date')) : new Date()),
+      status: mapMatchStatus(getStr('status') || getStr('Status')),
+      availability: mapMatchAvailability(getStr('availability') || getStr('Availability')),
+      streamURL: getStr('streamURL') || getStr('StreamURL'),
+      thumbnail: getStr('thumbnail') || getStr('Thumbnail') || undefined,
+      location: getStr('location') || getStr('Location') || undefined
     };
   }
 
