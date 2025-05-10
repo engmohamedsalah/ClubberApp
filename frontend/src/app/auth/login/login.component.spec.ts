@@ -5,11 +5,13 @@ import { CommonModule } from "@angular/common";
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { InjectionToken } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 
 describe("LoginComponent", () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
   let store: { dispatch: (...args: unknown[]) => void; dispatchCalls: unknown[][] };
+  let httpTestingController: HttpTestingController;
   const STORE_TOKEN = new InjectionToken('Store');
 
   beforeEach(async () => {
@@ -24,6 +26,7 @@ describe("LoginComponent", () => {
         LoginComponent,
         ReactiveFormsModule,
         CommonModule,
+        HttpClientTestingModule
       ],
       providers: [
         provideRouter([]),
@@ -35,6 +38,7 @@ describe("LoginComponent", () => {
 
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
+    httpTestingController = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
   });
 
@@ -76,6 +80,8 @@ describe("LoginComponent", () => {
     fixture.detectChanges();
     expect(component.loginForm.valid).toBeTruthy();
     component.onSubmit();
+    const req = httpTestingController.match(r => r.url.includes('/api/v1/Auth/login'));
+    req.forEach(r => r.flush({ token: 'fake-token', user: { id: '1', username: 'testuser' } }));
     expect(component.onSubmit).toHaveBeenCalled();
   });
 
@@ -88,6 +94,12 @@ describe("LoginComponent", () => {
     expect(component.loginForm.valid).toBeFalsy();
     component.onSubmit();
     expect(component.onSubmit).toHaveBeenCalled();
+  });
+
+  afterEach(() => {
+    if (httpTestingController) {
+      httpTestingController.verify();
+    }
   });
 });
 

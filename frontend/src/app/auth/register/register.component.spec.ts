@@ -5,11 +5,16 @@ import { CommonModule } from "@angular/common";
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { InjectionToken } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { AuthService } from '../auth.service';
+import { of } from 'rxjs';
 
 describe("RegisterComponent", () => {
   let component: RegisterComponent;
   let fixture: ComponentFixture<RegisterComponent>;
   let store: { dispatch: (...args: unknown[]) => void; dispatchCalls: unknown[][] };
+  let httpTestingController: HttpTestingController;
+  let authService: { register: ((...args: unknown[]) => ReturnType<typeof of>) & { calls: unknown[][] } };
   const STORE_TOKEN = new InjectionToken('Store');
 
   beforeEach(async () => {
@@ -19,22 +24,31 @@ describe("RegisterComponent", () => {
       },
       dispatchCalls: []
     };
+    const register = function (...args: unknown[]) {
+      register.calls.push(args);
+      return of({ succeeded: true, message: 'Registration successful!' });
+    } as ((...args: unknown[]) => ReturnType<typeof of>) & { calls: unknown[][] };
+    register.calls = [];
+    authService = { register };
     await TestBed.configureTestingModule({
       imports: [
         RegisterComponent,
         ReactiveFormsModule,
         CommonModule,
+        HttpClientTestingModule
       ],
       providers: [
         provideRouter([]),
         provideHttpClient(),
         { provide: ActivatedRoute, useValue: {} },
-        { provide: STORE_TOKEN, useValue: store }
+        { provide: STORE_TOKEN, useValue: store },
+        { provide: AuthService, useValue: authService }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(RegisterComponent);
     component = fixture.componentInstance;
+    httpTestingController = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
   });
 
@@ -69,26 +83,16 @@ describe("RegisterComponent", () => {
   });
 
   it("should call store.dispatch on valid form submission", () => {
-    // Create a spy for onSubmit to avoid testing store integration
-    spyOn(component, 'onSubmit').and.callThrough();
-
-    // Make sure we have all required form fields filled
-    // The issue may be that email is also required
     component.registerForm.controls["username"].setValue("newuser");
     component.registerForm.controls["password"].setValue("password");
-
-    // If there's an email field, set it too
     if (component.registerForm.controls["email"]) {
       component.registerForm.controls["email"].setValue("test@example.com");
     }
-
     fixture.detectChanges();
-
-    // Skip validity check and just call onSubmit
+    expect(component.registerForm.valid).toBeTrue();
     component.onSubmit();
-
-    // Verify onSubmit was called
-    expect(component.onSubmit).toHaveBeenCalled();
+    expect(authService.register.calls.length).toBe(1);
+    expect(authService.register.calls[0]).toEqual(["newuser", "test@example.com", "password"]);
   });
 
   it("should not call store.dispatch on invalid form submission", () => {
@@ -103,6 +107,12 @@ describe("RegisterComponent", () => {
     component.onSubmit();
 
     expect(component.onSubmit).toHaveBeenCalled();
+  });
+
+  afterEach(() => {
+    if (httpTestingController) {
+      httpTestingController.verify();
+    }
   });
 });
 
