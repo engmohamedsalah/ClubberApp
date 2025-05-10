@@ -7,6 +7,7 @@ namespace ClubberApp.Application.Services;
 public class StreamUrlService : IStreamUrlService
 {
     private readonly IConfiguration _configuration;
+    private const string DEV_BASE_URL = "https://dev-stream.example.com/";
 
     public StreamUrlService(IConfiguration configuration)
     {
@@ -24,13 +25,13 @@ public class StreamUrlService : IStreamUrlService
 
     public string GenerateStreamUrl(Guid matchId, MatchStatus status)
     {
-        var baseUrl = _configuration["StreamSettings:BaseUrl"];
-        var developmentMockStreamUrl = _configuration["StreamSettings:DevelopmentMockStreamUrl"];
-        string path;
+        var baseUrl = _configuration["StreamSettings:BaseUrl"] ?? string.Empty;
+        var developmentMockStreamUrl = _configuration["StreamSettings:DevelopmentMockStreamUrl"] ?? string.Empty;
+        string path = string.Empty;
 
         // Check if we are in a development-like scenario with a placeholder BaseUrl
         // and a specific mock URL is provided.
-        if (baseUrl == "https://dev-stream.example.com/" && !string.IsNullOrEmpty(developmentMockStreamUrl))
+        if (baseUrl == DEV_BASE_URL && !string.IsNullOrEmpty(developmentMockStreamUrl))
         {
             switch (status)
             {
@@ -48,10 +49,10 @@ public class StreamUrlService : IStreamUrlService
         switch (status)
         {
             case MatchStatus.Live:
-                path = _configuration["StreamSettings:LivePath"];
+                path = _configuration["StreamSettings:LivePath"] ?? string.Empty;
                 break;
             case MatchStatus.OnDemand:
-                path = _configuration["StreamSettings:ReplayPath"];
+                path = _configuration["StreamSettings:ReplayPath"] ?? string.Empty;
                 break;
             case MatchStatus.Upcoming:
             case MatchStatus.Canceled:
