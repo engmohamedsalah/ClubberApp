@@ -313,3 +313,86 @@ The Angular frontend is developed with a focus on maintainability, scalability, 
 
 For more details, see the technical documentation or contact the maintainers.
 
+## Database Class Diagram
+
+Below is a class diagram representing the main tables/entities in the backend database:
+
+```mermaid
+classDiagram
+    class User {
+        Guid Id
+        string Username
+        string Email
+        string PasswordHash
+        ICollection<Playlist> Playlist
+    }
+    class Match {
+        Guid Id
+        string Title
+        string Competition
+        DateTime Date
+        MatchStatus Status
+        MatchAvailability Availability
+        string StreamURL
+        string Location
+        string Thumbnail
+        ICollection<Playlist> PlaylistEntries
+    }
+    class Playlist {
+        Guid UserId
+        Guid MatchId
+        DateTime DateAdded
+        User User
+        Match Match
+    }
+    User "1" --o "*" Playlist : owns >
+    Match "1" --o "*" Playlist : appears in >
+    Playlist "*" --o "1" User : belongs to >
+    Playlist "*" --o "1" Match : references >
+```
+
+## Database Table Descriptions
+
+Below are the main tables in the backend database, with a brief description of each column:
+
+### Users Table
+
+| Column       | Type   | Description                                 |
+|-------------|--------|---------------------------------------------|
+| Id          | Guid   | Primary key. Unique identifier for the user.|
+| Username    | string | The user's chosen display name.             |
+| Email       | string | The user's email address (unique).          |
+| PasswordHash| string | Hashed password for authentication.         |
+
+---
+
+### Matches Table
+
+| Column       | Type      | Description                                              |
+|-------------|-----------|----------------------------------------------------------|
+| Id          | Guid      | Primary key. Unique identifier for the match.            |
+| Title       | string    | Title or name of the match (e.g., "Team A vs Team B").   |
+| Competition | string    | Name of the competition or league.                       |
+| Date        | DateTime  | Scheduled date and time of the match.                    |
+| Status      | int (enum)| Status of the match (0=Upcoming, 1=Live, 2=OnDemand, 3=Canceled). |
+| Availability| int (enum)| Availability (0=Available, 1=Unavailable, 2=Scheduled, 3=Restricted). |
+| StreamURL   | string    | URL for streaming the match.                             |
+| Location    | string    | Location where the match is held.                        |
+| Thumbnail   | string    | URL or path to the match thumbnail image.                |
+
+---
+
+### Playlists Table
+
+| Column    | Type     | Description                                                        |
+|-----------|----------|--------------------------------------------------------------------|
+| UserId    | Guid     | Primary key, foreign key to Users.Id. Identifies the user.         |
+| MatchId   | Guid     | Primary key, foreign key to Matches.Id. Identifies the match.      |
+| DateAdded | DateTime | The date and time when the match was added to the user's playlist. |
+
+---
+
+**Relationships:**  
+- `Playlists` is a join table for a many-to-many relationship between `Users` and `Matches`.  
+- Composite primary key: (`UserId`, `MatchId`).
+
