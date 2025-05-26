@@ -1,0 +1,31 @@
+<div class="modal-overlay" (click)="onOverlayClick($event)" (keydown.escape)="closeModal.emit()" (keydown.enter)="onOverlayClick($event)" tabindex="0" role="dialog" [attr.aria-modal]="match ? 'true' : null" [attr.aria-labelledby]="match ? 'modal-title-' + match.id : null" *ngIf="match">
+  <div #modalBox class="modal-box" role="document" (click)="$event.stopPropagation()" (keydown.escape)="closeModal.emit()">
+    <div class="modal-header">
+      <h3 class="modal-title" [id]="match ? 'modal-title-' + match.id : null">{{ match.title }} - {{ isLive ? 'Live Stream' : 'Replay' }}</h3>
+      <button type="button" class="modal-close-button" (click)="closeModal.emit()" aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <!-- Video Player -->
+      <div class="video-container aspect-video" *ngIf="safeStreamUrl">
+        <iframe
+          class="w-full h-full"
+          [src]="safeStreamUrl"
+          [title]="match.title + (isLive ? ' Live Stream' : ' Replay Video')"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div *ngIf="!safeStreamUrl" class="no-stream-message">
+        <p>Video stream is not available for this match.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-footer-info">
+        <p>Competition: {{ match.competition }}</p>
+        <p *ngIf="match?.location">Location: {{ match.location }}</p>
+      </div>
+      <button type="button" class="modal-close-text-button" (click)="closeModal.emit()">Close</button>
+    </div>
+  </div>
+</div>

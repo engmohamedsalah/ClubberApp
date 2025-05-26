@@ -7,29 +7,31 @@ import { of } from "rxjs";
 
 @Injectable()
 export class MatchesEffects {
+  loadMatches$;
+
   constructor(
     private actions$: Actions,
     private matchesService: MatchesService
-  ) {}
+  ) {
+    this.loadMatches$ = createEffect(() =>
+      this.actions$.pipe(
+        ofType(MatchesActions.loadMatches),
+        switchMap(() => {
+          // Load matches, which will update the matches$ observable
+          this.matchesService.loadMatches();
 
-  loadMatches$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(MatchesActions.loadMatches),
-      switchMap(() => {
-        // Load matches, which will update the matches$ observable
-        this.matchesService.loadMatches();
-
-        // Return the first emission from matches$
-        return this.matchesService.matches$.pipe(
-          take(1),
-          map(matches => MatchesActions.loadMatchesSuccess({ matches })),
-          catchError(error => {
-            const errorMessage = error?.error?.message || error?.message || "Failed to load matches";
-            return of(MatchesActions.loadMatchesFailure({ error: errorMessage }));
-          })
-        );
-      })
-    )
-  );
+          // Return the first emission from matches$
+          return this.matchesService.matches$.pipe(
+            take(1),
+            map(matches => MatchesActions.loadMatchesSuccess({ matches })),
+            catchError(error => {
+              const errorMessage = error?.error?.message || error?.message || "Failed to load matches";
+              return of(MatchesActions.loadMatchesFailure({ error: errorMessage }));
+            })
+          );
+        })
+      )
+    );
+  }
 }
 

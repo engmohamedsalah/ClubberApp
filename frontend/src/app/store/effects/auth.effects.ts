@@ -8,71 +8,82 @@ import * as AuthActions from '../actions/auth.actions';
 
 @Injectable()
 export class AuthEffects {
+  login$;
+  loginSuccess$;
+  register$;
+  registerSuccess$;
+  logout$;
+
   constructor(
     private actions$: Actions,
     private authService: AuthService,
     private router: Router
-  ) {}
+  ) {
+    console.log('[AuthEffects] Constructor - actions$', this.actions$);
+    console.log('[AuthEffects] Constructor - authService', this.authService);
+    console.log('[AuthEffects] Constructor - router', this.router);
 
-  login$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AuthActions.login),
-      exhaustMap(action =>
-        this.authService.login(action.username, action.password).pipe(
-          map(response => {
-            localStorage.setItem('authToken', response.token);
-            localStorage.setItem('authUser', JSON.stringify(response.user));
-            return AuthActions.loginSuccess({
-              user: response.user,
-              token: response.token
-            });
-          }),
-          catchError(error =>
-            of(AuthActions.loginFailure({
-              error: error?.error?.message || error?.message || 'Login failed'
-            }))
+    this.login$ = createEffect(() =>
+      this.actions$.pipe(
+        ofType(AuthActions.login),
+        exhaustMap(action =>
+          this.authService.login(action.username, action.password).pipe(
+            map(response => {
+              if (response && response.token && response.user) {
+                localStorage.setItem('authToken', response.token);
+                localStorage.setItem('authUser', JSON.stringify(response.user));
+                return AuthActions.loginSuccess({
+                  user: response.user,
+                  token: response.token
+                });
+              } else {
+                // Handle unexpected response structure
+                return AuthActions.loginFailure({
+                  error: 'Invalid response from server during login.'
+                });
+              }
+            }),
+            catchError(error =>
+              of(AuthActions.loginFailure({
+                error: error?.error?.message || error?.message || 'Login failed'
+              }))
+            )
           )
         )
       )
-    )
-  );
+    );
 
-  loginSuccess$ = createEffect(
-    () =>
+    this.loginSuccess$ = createEffect(() =>
       this.actions$.pipe(
         ofType(AuthActions.loginSuccess),
         tap(() => this.router.navigate(['/playlist']))
-      ),
-    { dispatch: false }
-  );
+      ), { dispatch: false }
+    );
 
-  register$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AuthActions.register),
-      exhaustMap(action =>
-        this.authService.register(action.username, action.email, action.password).pipe(
-          map(() => AuthActions.registerSuccess()),
-          catchError(error =>
-            of(AuthActions.registerFailure({
-              error: error?.error?.message || error?.message || 'Registration failed'
-            }))
+    this.register$ = createEffect(() =>
+      this.actions$.pipe(
+        ofType(AuthActions.register),
+        exhaustMap(action =>
+          this.authService.register(action.username, action.email, action.password).pipe(
+            map(() => AuthActions.registerSuccess()),
+            catchError(error =>
+              of(AuthActions.registerFailure({
+                error: error?.error?.message || error?.message || 'Registration failed'
+              }))
+            )
           )
         )
       )
-    )
-  );
+    );
 
-  registerSuccess$ = createEffect(
-    () =>
+    this.registerSuccess$ = createEffect(() =>
       this.actions$.pipe(
         ofType(AuthActions.registerSuccess),
         tap(() => this.router.navigate(['/auth/login']))
-      ),
-    { dispatch: false }
-  );
+      ), { dispatch: false }
+    );
 
-  logout$ = createEffect(
-    () =>
+    this.logout$ = createEffect(() =>
       this.actions$.pipe(
         ofType(AuthActions.logout),
         tap(() => {
@@ -80,8 +91,8 @@ export class AuthEffects {
           localStorage.removeItem('authUser');
           this.router.navigate(['/auth/login']);
         })
-      ),
-    { dispatch: false }
-  );
+      ), { dispatch: false }
+    );
+  }
 }
 

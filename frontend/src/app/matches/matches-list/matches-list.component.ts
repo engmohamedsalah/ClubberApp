@@ -1,14 +1,18 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable, Subscription } from 'rxjs';
-import { Match, MatchUIHelper } from '../../models/match.model';
+import { Match, MatchUIHelper, MatchStatus } from '../../models/match.model';
 import { MatchesService } from '../matches.service';
 import { PlaylistService } from '../../playlist/playlist.service';
 import { NotificationComponent, ErrorDisplayComponent, LoadingSpinnerComponent, PaginationControlsComponent } from '../../shared';
 import { PaginatedResult, PaginationHelper } from '../../models/pagination.model';
 import { LoggingService } from '../../core/services/logging.service';
 import { MatchCardComponent } from '../../shared/components/match-card/match-card.component';
+import { Store, select } from '@ngrx/store';
+import { AppState } from '../../store/reducers';
+import * as fromSelectors from '../../store/selectors/matches.selectors';
+import { VideoPlayerModalComponent } from '../../shared/components/video-player-modal/video-player-modal.component';
 
 @Component({
   selector: 'app-matches-list',
@@ -20,10 +24,12 @@ import { MatchCardComponent } from '../../shared/components/match-card/match-car
     MatchCardComponent,
     ErrorDisplayComponent,
     LoadingSpinnerComponent,
-    PaginationControlsComponent
+    PaginationControlsComponent,
+    VideoPlayerModalComponent
   ],
   templateUrl: './matches-list.component.html',
-  styleUrls: ['./matches-list.component.css']
+  styleUrls: ['./matches-list.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MatchesListComponent implements OnInit, OnDestroy {
   matches$: Observable<Match[]>;
@@ -35,9 +41,8 @@ export class MatchesListComponent implements OnInit, OnDestroy {
   currentFilter: 'All' | 'Live' | 'Replay' | 'Upcoming' = 'All';
   searchQuery = '';
 
-  // Pagination properties
   currentPage = 1;
-  pageSize = 9; // Adjust based on your UI layout (3x3 grid looks good)
+  pageSize = 9;
   sortBy = 'date';
   sortDescending = true;
 
@@ -45,23 +50,25 @@ export class MatchesListComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = [];
   private sseSubscription?: Subscription;
 
+  selectedMatchForModal: Match | null = null;
+
   constructor(
     private matchesService: MatchesService,
     private playlistService: PlaylistService,
-    private loggingService: LoggingService
+    private loggingService: LoggingService,
+    private store: Store<AppState>,
+    private cdr: ChangeDetectorRef
   ) {
-    this.matches$ = this.matchesService.matches$;
+    this.matches$ = this.store.pipe(select(fromSelectors.selectAllMatches));
     this.paginatedResult$ = this.matchesService.paginatedResult$;
-    this.loading$ = this.matchesService.loading$;
-    this.error$ = this.matchesService.error$;
+    this.loading$ = this.store.pipe(select(fromSelectors.selectMatchesLoading));
+    this.error$ = this.store.pipe(select(fromSelectors.selectMatchesError));
     this.notification$ = this.playlistService.notification$;
   }
 
   ngOnInit(): void {
-    // Subscribe to SSE for real-time updates
     this.sseSubscription = this.matchesService.getMatchesStream().subscribe({
       next: (matches) => {
-        // Update the matches and paginatedResult subjects for real-time UI
         this.matchesService["matchesSubject"].next(matches);
         this.matchesService["paginatedResultSubject"].next({
           data: matches,
@@ -69,12 +76,12 @@ export class MatchesListComponent implements OnInit, OnDestroy {
           pageSize: matches.length > 0 ? matches.length : 10,
           totalCount: matches.length
         });
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.loggingService.logError('SSE error in MatchesListComponent', err);
       }
     });
-    // Optionally, also load paginated matches initially for fallback
     this.loadPaginatedMatches();
   }
 
@@ -88,7 +95,6 @@ export class MatchesListComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Load paginated matches
   loadPaginatedMatches(): void {
     let filterParam: 'Live' | 'Replay' | 'Upcoming' | null = null;
     if (this.currentFilter === 'Live') {
@@ -99,9 +105,7 @@ export class MatchesListComponent implements OnInit, OnDestroy {
       filterParam = 'Upcoming';
     }
 
-    // Log the filter being sent to the service
     this.loggingService.logInfo('[MatchesListComponent] Calling loadPaginatedMatches with filter:', filterParam);
-
     this.matchesService.loadPaginatedMatches(
       this.currentPage,
       this.pageSize,
@@ -111,37 +115,27 @@ export class MatchesListComponent implements OnInit, OnDestroy {
     );
   }
 
-  // Filter matches by Live/Replay/All
   filterMatches(filter: 'All' | 'Live' | 'Replay' | 'Upcoming'): void {
     this.currentFilter = filter;
-    this.currentPage = 1; // Reset to first page when filter changes
+    this.currentPage = 1;
     this.loadPaginatedMatches();
   }
 
-  // Search matches by competition name
   onSearchChange(): void {
-    // Debounce search to avoid too many requests
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
     }
-
     this.searchTimeout = setTimeout(() => {
-      this.currentPage = 1; // Reset to first page on search
+      this.currentPage = 1;
       const trimmedQuery = this.searchQuery.trim();
-
       if (!trimmedQuery) {
-        // If search query is empty, reload based on the current primary filter and pagination settings
         this.loadPaginatedMatches();
       } else {
-        // Otherwise, perform the search
-        // For simplicity, using the non-paginated search for now - TODO: This was an old comment, it IS using paginated search now via the service
-        // In a real app, you would implement server-side search with pagination
         this.matchesService.searchMatches(trimmedQuery);
       }
     }, 300);
   }
 
-  // Pagination controls
   goToPage(page: number): void {
     if (page !== this.currentPage) {
       this.currentPage = page;
@@ -159,89 +153,41 @@ export class MatchesListComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Helper function to get page numbers for display
   getPageNumbers(result: PaginatedResult<Match>): number[] {
     return PaginationHelper.getPageNumbers(result);
   }
 
-  // Helper function to get total pages
   getTotalPages(result: PaginatedResult<Match>): number {
     return PaginationHelper.getTotalPages(result);
   }
 
-  // Add match to playlist
   addToPlaylist(match: Match): void {
     this.playlistService.addToPlaylist(match);
   }
 
-  // Check if match is already in playlist
   isInPlaylist(matchId: string): boolean {
     return this.playlistService.isInPlaylist(matchId);
   }
 
-  // Open mock streaming view
-  watchMatch(match: Match): void {
-    console.log('Opening mock stream for match:', match.id);
-
-    // Create a simple modal with embedded video
-    const modalDiv = document.createElement('div');
-    modalDiv.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
-    modalDiv.id = 'stream-modal';
-
-    const location = this.getLocation(match);
-
-    // Modal content
-    modalDiv.innerHTML = `
-      <div class="bg-gray-900 rounded-lg overflow-hidden max-w-4xl w-full mx-4">
-        <div class="p-4 flex justify-between items-center border-b border-gray-700">
-          <h3 class="text-xl font-bold text-white">${match.title} - ${this.isLive(match) ? 'Live Stream' : 'Replay'}</h3>
-          <button id="close-modal" class="text-white hover:text-gray-300">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <div class="relative" style="padding-top: 56.25%">
-          <iframe src="${match.streamURL || ''}"
-            class="absolute inset-0 w-full h-full"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen>
-          </iframe>
-        </div>
-        <div class="p-4 text-gray-300">
-          <p>Competition: ${match.competition}</p>
-          ${location ? `<p>Location: ${location}</p>` : ''}
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(modalDiv);
-
-    // Add close event listener
-    document.getElementById('close-modal')?.addEventListener('click', () => {
-      document.body.removeChild(modalDiv);
-    });
+  openMatchVideoModal(match: Match): void {
+    this.selectedMatchForModal = match;
+    this.cdr.markForCheck();
   }
 
-  // Clear notification
-  clearNotification(): void {
-    this.playlistService.clearNotification();
+  closeMatchVideoModal(): void {
+    this.selectedMatchForModal = null;
+    this.cdr.markForCheck();
   }
 
-  // Helper methods to make UI properties available to the template
   isLive(match: Match): boolean {
-    return MatchUIHelper.isLive(match);
+    return match.status === MatchStatus.Live;
   }
 
   isReplay(match: Match): boolean {
-    return MatchUIHelper.isReplay(match);
+    return match.status === MatchStatus.OnDemand;
   }
 
   getLocation(match: Match): string | undefined {
-    // In a real app, this might come from a separate venue/location DB
-    // For demo purposes, extract it from the competition field if present
     if (match.competition.includes('at ')) {
       return match.competition.split('at ')[1].trim();
     }
@@ -250,6 +196,10 @@ export class MatchesListComponent implements OnInit, OnDestroy {
 
   getThumbnail(match: Match): string | undefined {
     return MatchUIHelper.getThumbnail(match);
+  }
+
+  clearPlaylistNotification(): void {
+    this.playlistService.clearNotification();
   }
 }
 

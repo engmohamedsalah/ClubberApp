@@ -69,7 +69,7 @@
           [isInPlaylist]="isInPlaylist(match.id)"
           context="matches-list"
           (addToPlaylist)="addToPlaylist($event)"
-          (watchMatch)="watchMatch($event)">
+          (watchMatch)="openMatchVideoModal($event)">
         </app-match-card>
       </div>
 
@@ -106,7 +106,14 @@
   <!-- Notification Component -->
   <app-notification
     [notification]="notification$ | async"
-    (closeNotification)="clearNotification()">
+    (closeNotification)="clearPlaylistNotification()">
   </app-notification>
 </div>
+
+<!-- Add the new Video Player Modal -->
+<app-video-player-modal
+  *ngIf="selectedMatchForModal"
+  [match]="selectedMatchForModal"
+  (closeModal)="closeMatchVideoModal()">
+</app-video-player-modal>
 

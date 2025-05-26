@@ -5,6 +5,8 @@ import { ActivatedRoute, provideRouter } from '@angular/router';
 import { MatchStatus, MatchAvailability } from '../../models/match.model';
 import { BehaviorSubject } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
+import { provideMockStore } from '@ngrx/store/testing';
+import { initialMatchesState } from '../../store/state/matches.state';
 
 type SpyFunction = ((...args: unknown[]) => void) & { calls: unknown[][] };
 
@@ -59,6 +61,7 @@ describe("MatchesListComponent", () => {
       providers: [
         provideRouter([]),
         provideHttpClient(),
+        provideMockStore({ initialState: { matches: initialMatchesState } }),
         { provide: 'MatchesService', useValue: matchesService },
         { provide: 'PlaylistService', useValue: playlistService },
         { provide: ActivatedRoute, useValue: {} }
